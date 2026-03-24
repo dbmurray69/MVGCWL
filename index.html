@@ -991,14 +991,14 @@
   }
   .banner-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
   .banner-text { flex: 1; }
-  .banner-headline { font-family:'Playfair Display',serif; font-size:17px; font-weight:700; color:var(--gold-light); line-height:1.3; }
+  .banner-headline { font-family:'EB Garamond',serif; font-size:15px; font-weight:400; color:var(--cream); line-height:1.5; white-space:pre-line; overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; }
   .banner-meta { font-family:'Courier Prime',monospace; font-size:10px; letter-spacing:1px; color:var(--cream-dark); opacity:0.6; margin-top:4px; }
   .banner-more { font-family:'Courier Prime',monospace; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--gold); opacity:0.7; cursor:pointer; background:none; border:none; padding:0; flex-shrink:0; align-self:center; transition:opacity 0.15s; }
   .banner-more:hover { opacity:1; }
 
   /* ── ANNOUNCEMENT FEED ── */
   .announcement-card { background:rgba(26,66,40,0.4); border:1px solid rgba(201,168,76,0.2); border-left:3px solid var(--gold); border-radius:0 4px 4px 0; padding:18px 20px; margin-bottom:14px; }
-  .announcement-body { font-family:'EB Garamond',serif; font-size:17px; line-height:1.55; color:var(--cream); }
+  .announcement-body { font-family:'EB Garamond',serif; font-size:16px; line-height:1.6; color:var(--cream); white-space:pre-line; font-weight:400; }
   .announcement-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:10px; }
   .announcement-author { font-family:'Courier Prime',monospace; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--gold); opacity:0.75; }
   .announcement-ts { font-family:'Courier Prime',monospace; font-size:10px; color:var(--cream-dark); opacity:0.5; }
@@ -4032,11 +4032,11 @@ async function postRecentResults() {
   const postedKeysKey = 'mvgc_posted_result_keys';
   const postedKeys = new Set(JSON.parse(localStorage.getItem(postedKeysKey) || '[]'));
   const now = Date.now();
-  const todayStr = new Date().toDateString();
+  const cutoff24h = now - (24 * 60 * 60 * 1000);
 
   const playoffRounds = ['Playoff SF1', 'Playoff SF2', 'Playoff Final'];
 
-  // Dedup audit log — keep most recent entry per matchup
+  // Dedup — keep most recent entry per matchup
   const deduped = new Map();
   resultLog.filter(r => playoffRounds.includes(r.week) && r.winner).forEach(r => {
     const key = `${r.week}-T${r.tier}`;
@@ -4044,14 +4044,12 @@ async function postRecentResults() {
       deduped.set(key, r);
   });
 
-  // Build inclusion list:
-  // - Always include today's results
-  // - Include past results only if never posted before
+  // Include: results from last 24 hours + any older never-posted results
   const toPost = [...deduped.values()].filter(r => {
     const key = `${r.week}-T${r.tier}`;
-    const isToday = new Date(r.ts).toDateString() === todayStr;
+    const isRecent = new Date(r.ts).getTime() >= cutoff24h;
     const neverPosted = !postedKeys.has(key);
-    return isToday || neverPosted;
+    return isRecent || neverPosted;
   });
 
   if (!toPost.length) { showToast('No new results to post.'); return; }
@@ -4063,44 +4061,78 @@ async function postRecentResults() {
     return rd !== 0 ? rd : (a.tier||0) - (b.tier||0);
   });
 
-  const lines = [];
+  // Format each result on its own line
+  // Winner name / Team result
+  // over Loser name
+  // or "Halved" for ties
+  const resultLines = [];
   toPost.forEach(r => {
     const roundLabel = r.week.replace('Playoff ', '');
-    const resultStr = r.result ? ` (${r.result})` : '';
-    const tierStr = r.tier ? `T${r.tier} ` : '';
+    const resultStr = r.result || '';
+    const tierStr = `Tier ${r.tier}`;
+
+    // Look up player names for this tier
+    const homeTeam = r.week === 'Playoff SF1' ? playoffState.sf1?.teamA
+                   : r.week === 'Playoff SF2' ? playoffState.sf2?.teamA
+                   : playoffState.finalTeamA;
+    const awayTeam = r.week === 'Playoff SF1' ? playoffState.sf1?.teamB
+                   : r.week === 'Playoff SF2' ? playoffState.sf2?.teamB
+                   : playoffState.finalTeamB;
+    const homePlayer = getPlayerForTeamTier(homeTeam, r.tier) || r.home;
+    const awayPlayer = getPlayerForTeamTier(awayTeam, r.tier) || r.away;
+
     if (r.winner === 'halved') {
-      lines.push(`  ${tierStr}${r.home} vs ${r.away} — Halved${resultStr} · ${roundLabel}`);
+      resultLines.push(`${roundLabel} · ${tierStr}\n${homePlayer} (${r.home}) vs ${awayPlayer} (${r.away})\nHalved${resultStr ? ' ' + resultStr : ''}`);
     } else {
-      const w = r.winner === 'home' ? r.home : r.away;
-      const l = r.winner === 'home' ? r.away : r.home;
-      lines.push(`  ${tierStr}${w} def. ${l}${resultStr} · ${roundLabel}`);
+      const winPlayer = r.winner === 'home' ? homePlayer : awayPlayer;
+      const winTeam   = r.winner === 'home' ? r.home : r.away;
+      const losePlayer = r.winner === 'home' ? awayPlayer : homePlayer;
+      const loseTeam   = r.winner === 'home' ? r.away : r.home;
+      resultLines.push(`${roundLabel} · ${tierStr}\n${winPlayer} (${winTeam}) def. ${losePlayer} (${loseTeam})${resultStr ? ' ' + resultStr : ''}`);
     }
   });
 
   // Current scores
   const sf1pts = calcRoundPoints(playoffState.sf1Results);
   const sf2pts = calcRoundPoints(playoffState.sf2Results);
-  let scoreStr = '';
-  if (playoffState.sf1?.teamA) scoreStr += `\n  ${playoffState.sf1.teamA} ${sf1pts.homeP} – ${sf1pts.awayP} ${playoffState.sf1.teamB}`;
-  if (playoffState.sf2?.teamA) scoreStr += `\n  ${playoffState.sf2.teamA} ${sf2pts.homeP} – ${sf2pts.awayP} ${playoffState.sf2.teamB}`;
+  const sf1played = Object.values(playoffState.sf1Results).filter(r=>r&&r.winner).length;
+  const sf2played = Object.values(playoffState.sf2Results).filter(r=>r&&r.winner).length;
+  let scoreLines = 'Current Scores';
+  if (playoffState.sf1?.teamA && sf1played > 0)
+    scoreLines += `\n${playoffState.sf1.teamA} ${sf1pts.homeP} – ${sf1pts.awayP} ${playoffState.sf1.teamB} (${sf1played}/10 played)`;
+  if (playoffState.sf2?.teamA && sf2played > 0)
+    scoreLines += `\n${playoffState.sf2.teamA} ${sf2pts.homeP} – ${sf2pts.awayP} ${playoffState.sf2.teamB} (${sf2played}/10 played)`;
 
-  const text = `📊 Playoff Results Update\n\n${lines.join('\n')}\n\nCurrent Scores:${scoreStr}`;
-  await sbInsert('announcements', { text, author: 'Commish' });
+  const text = `Playoff Results\n\n${resultLines.join('\n\n')}\n\n${scoreLines}`;
 
-  // Mark ALL posted results as posted (today's will re-post next time, old ones won't)
+  // Try insert with publishable key, fallback to anon
+  let inserted = await sbInsert('announcements', { text, author: 'Commish' });
+  if (!inserted) {
+    const r2 = await fetch(`${SB_URL}/rest/v1/announcements`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON, 'Prefer': 'return=representation' },
+      body: JSON.stringify({ text, author: 'Commish' })
+    });
+    if (!r2.ok) { showToast('Failed to post — database offline.'); return; }
+  }
+
+  // Mark older results as posted (recent ones stay untracked so they re-post tomorrow)
   toPost.forEach(r => {
-    const isToday = new Date(r.ts).toDateString() === todayStr;
-    if (!isToday) postedKeys.add(`${r.week}-T${r.tier}`); // only mark old results as done
+    const key = `${r.week}-T${r.tier}`;
+    if (new Date(r.ts).getTime() < cutoff24h) postedKeys.add(key);
   });
   localStorage.setItem(postedKeysKey, JSON.stringify([...postedKeys]));
 
   await loadAnnouncements();
   renderLatestBanner();
-  if (document.getElementById('page-announcements')?.classList.contains('active')) renderAnnouncementsPage();
+  const activePage = document.querySelector('.page.active');
+  if (activePage?.id === 'page-announcements') renderAnnouncementsPage();
+
   const status = document.getElementById('quick-post-status');
-  if (status) status.textContent = `${lines.length} result${lines.length>1?'s':''} posted · ${new Date().toLocaleTimeString()}`;
-  showToast(`${lines.length} result${lines.length>1?'s':''} posted to News ✓`);
+  if (status) status.textContent = `${toPost.length} result${toPost.length>1?'s':''} posted · ${new Date().toLocaleTimeString()}`;
+  showToast(`${toPost.length} result${toPost.length>1?'s':''} posted to News`);
 }
+
 
 
 
