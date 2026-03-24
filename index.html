@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mill Valley Golf Club — Winter League 2026</title>
+<title>Mill Valley Golf Club — Winter League 2026 v10</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -562,12 +562,8 @@
     .playoff-bracket-wrap { justify-content: flex-start; }
     .playoff-match-block { padding: 16px 12px; }
     .playoff-matchup-header { font-size: 17px; }
-    .playoff-tier-row { grid-template-columns: 28px 1fr 1fr; gap: 4px; padding: 8px 0; }
-    .playoff-result-input { display: none; } /* hide text input on mobile - use dropdown only */
-    .playoff-winner-select { font-size: 12px; padding: 6px 4px; min-height: 36px; width: 100%; }
-    .playoff-tier-header { grid-template-columns: 28px 1fr 1fr; }
-    .playoff-tier-header span:nth-child(4) { display: none; }
-    .playoff-tier-header span:nth-child(5) { font-size: 9px; }
+    .pog-matchup { font-size: 15px; }
+    .pog-btn { font-size: 11px; padding: 11px 6px; }
 
     .setup-tabs { gap: 6px; }
     .setup-tab { font-size: 9px; padding: 7px 10px; letter-spacing: 1px; }
@@ -654,51 +650,121 @@
     font-family: 'Playfair Display', serif; font-size: 22px;
     color: var(--white); margin-bottom: 20px; font-weight: 700;
   }
-  .playoff-tier-grid { display: flex; flex-direction: column; gap: 0; }
-  .playoff-tier-row {
+  /* ── PLAYOFF ENTRY CARDS (POG) — mobile-first ── */
+  .playoff-tier-grid { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+
+  .pog-card {
+    background: rgba(13,40,24,0.7);
+    border: 2px solid rgba(201,168,76,0.2);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color 0.2s;
+  }
+  .pog-tier-badge {
+    font-family: 'Courier Prime', monospace;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--gold); opacity: 0.7; margin-bottom: 8px;
+  }
+  .pog-matchup {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px; color: var(--cream);
+    margin-bottom: 14px; line-height: 1.4;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .pog-vs {
+    font-family: 'Courier Prime', monospace;
+    font-size: 10px; color: var(--cream-dark); opacity: 0.4;
+  }
+
+  /* Three winner buttons */
+  .pog-winner-row {
     display: grid;
-    grid-template-columns: 40px 1fr 1fr 130px 140px;
-    gap: 6px; align-items: center;
-    padding: 7px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
   }
-  .playoff-tier-row:last-child { border-bottom: none; }
-  .playoff-tier-num {
-    font-family: 'Courier Prime', monospace; font-size: 11px;
-    color: var(--gold); text-align: center;
+  .pog-btn {
+    padding: 12px 8px;
+    background: rgba(0,0,0,0.3);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: var(--cream);
+    font-family: 'Courier Prime', monospace;
+    font-size: 12px; letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    min-height: 48px;
+    line-height: 1.3;
+    -webkit-tap-highlight-color: transparent;
   }
-  .playoff-player-name { font-size: 14px; }
-  .playoff-result-input {
-    background: rgba(0,0,0,0.3); border: 1px solid rgba(201,168,76,0.3);
-    color: var(--cream); font-family: 'Courier Prime', monospace;
-    font-size: 12px; padding: 5px 8px; border-radius: 3px;
-    width: 100%; text-align: center;
+  .pog-btn:hover { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.08); }
+  .pog-btn:active { transform: scale(0.97); }
+  .pog-btn-active {
+    background: rgba(201,168,76,0.2) !important;
+    border-color: var(--gold) !important;
+    color: var(--gold) !important;
+    font-weight: 700;
   }
-  .playoff-result-input:focus { outline: none; border-color: var(--gold); }
-  .playoff-winner-select {
-    background: rgba(0,0,0,0.3); border: 1px solid rgba(201,168,76,0.3);
-    color: var(--cream); font-family: 'Courier Prime', monospace;
-    font-size: 11px; padding: 5px 6px; border-radius: 3px; width: 100%;
+  /* Middle "Halved" button is narrower */
+  .pog-winner-row .pog-btn:nth-child(2) {
+    padding: 12px 6px;
+    font-size: 10px;
+    border-color: rgba(255,255,255,0.08);
   }
-  .playoff-winner-select:focus { outline: none; border-color: var(--gold); }
+
+  /* Optional score input */
+  .pog-score-input {
+    width: 100%; box-sizing: border-box;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 6px;
+    color: var(--cream-dark);
+    font-family: 'Courier Prime', monospace;
+    font-size: 13px;
+    padding: 10px 14px;
+    min-height: 42px;
+  }
+  .pog-score-input:focus { outline: none; border-color: var(--gold); color: var(--cream); }
+  .pog-score-input::placeholder { opacity: 0.35; font-size: 12px; }
+
+  /* Readonly display */
+  .pog-result-display {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .pog-score-badge {
+    font-family: 'Courier Prime', monospace; font-size: 13px;
+    background: rgba(0,0,0,0.25); color: var(--cream-dark);
+    padding: 4px 12px; border-radius: 4px;
+  }
+  .pog-winner-badge {
+    font-size: 15px; color: var(--gold-light); font-weight: 600;
+  }
+  .pog-no-result {
+    font-family: 'Courier Prime', monospace;
+    font-size: 11px; color: var(--cream-dark); opacity: 0.35;
+    letter-spacing: 1px;
+  }
+
+  /* ── PLAYOFF SCHEDULE INPUT ── */
+  .playoff-schedule-row { display:flex; align-items:center; gap:10px; margin:6px 0 14px; }
+  .playoff-schedule-icon { font-size:16px; flex-shrink:0; }
+  .playoff-schedule-input {
+    flex:1; background:rgba(0,0,0,0.2); border:1px solid rgba(201,168,76,0.2);
+    border-radius:4px; color:var(--cream-dark);
+    font-family:'Courier Prime',monospace; font-size:12px; padding:7px 12px;
+  }
+  .playoff-schedule-input:focus { outline:none; border-color:var(--gold); color:var(--cream); }
+  .playoff-schedule-input::placeholder { opacity:0.4; }
+
   .playoff-summary {
     margin-top: 16px; padding: 14px 18px;
-    background: rgba(0,0,0,0.2); border-radius: 4px;
-    border: 1px solid rgba(201,168,76,0.15);
+    background: rgba(0,0,0,0.2); border-radius: 6px;
+    border: 1px solid rgba(201,168,76,0.2);
     font-family: 'Playfair Display', serif; font-size: 18px;
   }
   .playoff-save-btn { margin-top: 16px; }
-  .playoff-tier-header {
-    display: grid;
-    grid-template-columns: 40px 1fr 1fr 130px 140px;
-    gap: 6px; padding: 0 0 8px 0;
-    border-bottom: 1px solid rgba(201,168,76,0.3);
-    margin-bottom: 4px;
-  }
-  .playoff-tier-header span {
-    font-family: 'Courier Prime', monospace; font-size: 9px;
-    letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold);
-  }
 
   /* Champion banner */
   .champion-banner {
@@ -713,21 +779,8 @@
     to   { box-shadow: 0 0 60px rgba(201,168,76,0.5); }
   }
   .champion-trophy { font-size: 64px; margin-bottom: 12px; }
-  .champion-label {
-    font-family: 'Courier Prime', monospace; font-size: 11px;
-    letter-spacing: 3px; text-transform: uppercase;
-    color: var(--gold); opacity: 0.8; margin-bottom: 8px;
-  }
-  .champion-name {
-    font-family: 'Playfair Display', serif; font-size: 42px;
-    font-weight: 900; color: var(--gold-light);
-  }
-
-  @media (max-width: 700px) {
-    .playoff-tier-row, .playoff-tier-header { grid-template-columns: 28px 1fr 1fr; }
-    .playoff-result-input { display: none; } /* hide score text input, keep winner dropdown */
-    .playoff-winner-select { display: block; font-size: 12px; padding: 6px 2px; width: 100%; min-height: 36px; }
-  }
+  .champion-label { font-family:'Courier Prime',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); opacity:0.8; margin-bottom:8px; }
+  .champion-name { font-family:'Playfair Display',serif; font-size:42px; font-weight:900; color:var(--gold-light); }
   /* ── ANNOUNCEMENT BANNER ── */
   .announcement-banner {
     background: linear-gradient(135deg, rgba(201,168,76,0.18), rgba(26,66,40,0.5));
@@ -1551,6 +1604,22 @@
         <div class="league-stat-lbl">Players</div>
       </div>
     </div>
+
+    <!-- Playoff stats -->
+    <div class="league-stats-row" id="playoff-stats-row" style="margin-top:12px;">
+      <div class="league-stat-box" style="border-color:rgba(201,168,76,0.4);">
+        <div class="league-stat-val" id="pstat-sf1" style="font-size:clamp(20px,3vw,32px);">0/10</div>
+        <div class="league-stat-lbl">SF1 Results</div>
+      </div>
+      <div class="league-stat-box" style="border-color:rgba(201,168,76,0.4);">
+        <div class="league-stat-val" id="pstat-sf2" style="font-size:clamp(20px,3vw,32px);">0/10</div>
+        <div class="league-stat-lbl">SF2 Results</div>
+      </div>
+      <div class="league-stat-box" style="border-color:rgba(201,168,76,0.4);">
+        <div class="league-stat-val" id="pstat-final" style="font-size:clamp(20px,3vw,32px);">0/10</div>
+        <div class="league-stat-lbl">Final Results</div>
+      </div>
+    </div>
   </div>
 
   <!-- INSTRUCTIONS -->
@@ -1568,7 +1637,7 @@
           <p class="step-text">Tap <strong>✏️ Enter Results</strong> in the top-left corner of the header (or via the <strong>More</strong> menu on mobile). You'll see a login screen.</p>
           <div class="step-callout">
             <div class="callout-row"><span class="callout-label">Username</span><span class="callout-val">First initial + last name, lowercase — e.g. <code>ldornhofer</code></span></div>
-            <div class="callout-row"><span class="callout-label">Password</span><span class="callout-val">Last 7 digits of your registered phone number — e.g. <code>4979340</code></span></div>
+            <div class="callout-row"><span class="callout-label">Password</span><span class="callout-val">Last 7 digits of your registered phone number</span></div>
           </div>
           <p class="step-text step-note">🔒 Forgot your password? Tap <strong>"Forgot password?"</strong> on the login screen. Enter your username and you'll see a hint showing the last 4 digits of your registered number. You can then set a new password.</p>
         </div>
@@ -1828,6 +1897,7 @@
   <!-- PLAYOFFS -->
   <div id="page-playoffs" class="page">
     <div id="playoff-announcement-banner"></div>
+    <div id="playoff-signin-banner"></div>
     <h2 class="section-title">Playoffs 🏆</h2>
     <p class="section-subtitle">Single-elimination — Semifinals → Championship Final</p>
 
@@ -1838,6 +1908,11 @@
     <div class="playoff-match-block" id="playoff-sf1-block">
       <div class="playoff-round-label">Semifinal 1</div>
       <div class="playoff-matchup-header" id="playoff-sf1-header">TBD vs TBD</div>
+      <div class="playoff-schedule-row" id="playoff-sf1-schedule">
+        <span class="playoff-schedule-icon">📅</span>
+        <input class="playoff-schedule-input" id="sf1-schedule-input" placeholder="Scheduled: Day · Time (e.g. Sat Mar 29 · 9:00 AM)"
+          oninput="savePlayoffSchedule('sf1')" />
+      </div>
       <div id="playoff-sf1-grid" class="playoff-tier-grid"></div>
       <div id="playoff-sf1-summary" class="playoff-summary"></div>
     </div>
@@ -1846,6 +1921,11 @@
     <div class="playoff-match-block" id="playoff-sf2-block">
       <div class="playoff-round-label">Semifinal 2</div>
       <div class="playoff-matchup-header" id="playoff-sf2-header">TBD vs TBD</div>
+      <div class="playoff-schedule-row" id="playoff-sf2-schedule">
+        <span class="playoff-schedule-icon">📅</span>
+        <input class="playoff-schedule-input" id="sf2-schedule-input" placeholder="Scheduled: Day · Time (e.g. Sat Mar 29 · 11:00 AM)"
+          oninput="savePlayoffSchedule('sf2')" />
+      </div>
       <div id="playoff-sf2-grid" class="playoff-tier-grid"></div>
       <div id="playoff-sf2-summary" class="playoff-summary"></div>
     </div>
@@ -1854,6 +1934,11 @@
     <div class="playoff-match-block playoff-final-block" id="playoff-final-block">
       <div class="playoff-round-label playoff-round-final">Championship Final</div>
       <div class="playoff-matchup-header" id="playoff-final-header">Winners TBD</div>
+      <div class="playoff-schedule-row" id="playoff-final-schedule">
+        <span class="playoff-schedule-icon">📅</span>
+        <input class="playoff-schedule-input" id="final-schedule-input" placeholder="Scheduled: Day · Time (e.g. Sat Apr 5 · 10:00 AM)"
+          oninput="savePlayoffSchedule('final')" />
+      </div>
       <div id="playoff-final-grid" class="playoff-tier-grid"></div>
       <div id="playoff-final-summary" class="playoff-summary"></div>
     </div>
@@ -2433,6 +2518,21 @@ async function sbUpsert(table, row, onConflict) {
     if (!r.ok) console.error(`sbUpsert ${table} failed:`, r.status, await r.text());
     return r.ok;
   } catch(e) { console.error(`sbUpsert ${table} error:`, e); return false; }
+}
+
+// Upload a file to Supabase Storage and return its public URL
+async function sbUploadFile(file, folder) {
+  try {
+    const ext = file.name ? file.name.split('.').pop() : (file.type.split('/')[1] || 'bin');
+    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const r = await fetch(`${SB_URL}/storage/v1/object/media/${path}`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': file.type || 'application/octet-stream' },
+      body: file
+    });
+    if (!r.ok) { console.error('sbUploadFile failed:', r.status, await r.text()); return null; }
+    return `${SB_URL}/storage/v1/object/public/media/${path}`;
+  } catch(e) { console.error('sbUploadFile error:', e); return null; }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3432,25 +3532,23 @@ async function handlePhotoUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
   const playerName = e.target.dataset.player;
-  const reader = new FileReader();
-  reader.onload = async function(ev) {
-    const dataURL = ev.target.result;
-    playerPhotos[playerName] = dataURL;
+  showToast('Uploading photo…');
 
-    // Save to Supabase so all devices see it
-    await sbUpsert('player_photos', { player_name: playerName, photo_data: dataURL }, 'player_name');
+  // Upload to Supabase Storage
+  const url = await sbUploadFile(file, 'players');
+  if (!url) { showToast('Upload failed — try again.'); return; }
 
-    // Also save to localStorage as backup
-    try { localStorage.setItem('mvgc_photos', JSON.stringify(playerPhotos)); } catch(e) {}
+  playerPhotos[playerName] = url;
 
-    const photoEl = document.getElementById('card-photo');
-    document.getElementById('card-photo-placeholder').style.display = 'none';
-    photoEl.src = dataURL; photoEl.style.display = 'block';
-    showToast('Photo saved for ' + playerName + ' ✓');
-    if (document.getElementById('page-roster')?.classList.contains('active')) renderRoster();
-    renderShameWall(); // update shame wall photos too
-  };
-  reader.readAsDataURL(file);
+  // Save URL to player_photos table
+  await sbUpsert('player_photos', { player_name: playerName, photo_data: url }, 'player_name');
+
+  const photoEl = document.getElementById('card-photo');
+  document.getElementById('card-photo-placeholder').style.display = 'none';
+  photoEl.src = url; photoEl.style.display = 'block';
+  showToast('Photo saved for ' + playerName + ' ✓');
+  if (document.getElementById('page-roster')?.classList.contains('active')) renderRoster();
+  renderShameWall();
 }
 
 function playerLink(name) {
@@ -4163,10 +4261,12 @@ function renderAceWall() {
 async function attachEntryMedia(event, key, wallType) {
   const file = event.target.files[0];
   if (!file) return;
+  showToast('Uploading media…');
   try {
-    const src = await readFileAsDataURL(file);
+    const url = await sbUploadFile(file, 'entries');
+    if (!url) { showToast('Upload failed — try again.'); return; }
     const type = file.type.startsWith('video') ? 'video' : 'image';
-    entryMedia[key] = { src, type };
+    entryMedia[key] = { src: url, type };
     saveEntryMedia();
     showToast('Media saved ✓');
     if (wallType === 'shame') renderShameWall();
@@ -4189,9 +4289,11 @@ async function recordAce() {
   // Handle media file
   const mediaFile = document.getElementById('ace-media').files[0];
   if (mediaFile) {
-    readFileAsDataURL(mediaFile).then(src => {
-      entryMedia[aceId] = { src, type: mediaFile.type.startsWith('video') ? 'video' : 'image' };
-      saveEntryMedia();
+    sbUploadFile(mediaFile, 'aces').then(url => {
+      if (url) {
+        entryMedia[aceId] = { src: url, type: mediaFile.type.startsWith('video') ? 'video' : 'image' };
+        saveEntryMedia();
+      }
       renderAceWall();
     });
   } else {
@@ -4217,9 +4319,11 @@ function recordShameEntry() {
 
   const mediaFile = document.getElementById('shame-media').files[0];
   if (mediaFile) {
-    readFileAsDataURL(mediaFile).then(src => {
-      entryMedia[`shame-custom-${idx}`] = { src, type: mediaFile.type.startsWith('video') ? 'video' : 'image' };
-      saveEntryMedia();
+    sbUploadFile(mediaFile, 'shame').then(url => {
+      if (url) {
+        entryMedia[`shame-custom-${idx}`] = { src: url, type: mediaFile.type.startsWith('video') ? 'video' : 'image' };
+        saveEntryMedia();
+      }
       renderShameWall();
     });
   } else {
@@ -4365,50 +4469,87 @@ function calcRoundPoints(resultsObj) {
 function buildPlayoffTierGrid(matchId, teamA, teamB, resultsObj, readonly) {
   if (!teamA || !teamB) return '<div class="empty-state" style="padding:20px;">Teams not yet assigned.</div>';
 
-  let html = `<div class="playoff-tier-header">
-    <span>#</span><span>${teamA}</span><span>${teamB}</span>
-    <span>Result</span><span>Winner</span>
-  </div><div class="playoff-tier-grid">`;
-
+  let html = '';
   for (let tier = 1; tier <= 10; tier++) {
     const pA = getPlayerForTeamTier(teamA, tier) || '—';
     const pB = getPlayerForTeamTier(teamB, tier) || '—';
     const existing = resultsObj[tier];
     const resVal = existing ? existing.result : '';
     const winVal = existing ? existing.winner : '';
-    const safeA = pA.replace(/'/g,"\\'"), safeB = pB.replace(/'/g,"\\'");
+    const safeA = pA.replace(/'/g, "\\'");
+    const safeB = pB.replace(/'/g, "\\'");
+
+    // Winner label for readonly
+    const winLabel = winVal === 'home' ? pA : winVal === 'away' ? pB : winVal === 'halved' ? 'Halved' : '';
+    const hasResult = !!winVal;
+    const cardBorder = hasResult ? 'border-color:rgba(201,168,76,0.5);' : '';
 
     if (readonly) {
-      const winLabel = winVal === 'home' ? pA : winVal === 'away' ? pB : winVal === 'halved' ? 'Halved' : '—';
-      const winColor = winVal && winVal !== 'halved' ? 'color:var(--gold-light);font-weight:600;' : '';
-      html += `<div class="playoff-tier-row">
-        <div class="playoff-tier-num">T${tier}</div>
-        <div class="playoff-player-name"><span class="player-link" onclick="openPlayerCard('${safeA}')">${pA}</span></div>
-        <div class="playoff-player-name"><span class="player-link" onclick="openPlayerCard('${safeB}')">${pB}</span></div>
-        <div style="font-family:'Courier Prime',monospace;font-size:12px;color:var(--cream-dark);">${resVal||'—'}</div>
-        <div style="font-size:13px;${winColor}">${winLabel}</div>
+      html += `
+      <div class="pog-card" style="${cardBorder}">
+        <div class="pog-tier-badge">Tier ${tier}</div>
+        <div class="pog-matchup">${pA} <span class="pog-vs">vs</span> ${pB}</div>
+        ${hasResult ? `<div class="pog-result-display">
+          <span class="pog-score-badge">${resVal||'—'}</span>
+          <span class="pog-winner-badge">${winLabel} wins</span>
+        </div>` : '<div class="pog-result-display pog-no-result">Not yet played</div>'}
       </div>`;
     } else {
-      html += `<div class="playoff-tier-row">
-        <div class="playoff-tier-num">T${tier}</div>
-        <div class="playoff-player-name"><span class="player-link" onclick="openPlayerCard('${safeA}')">${pA}</span></div>
-        <div class="playoff-player-name"><span class="player-link" onclick="openPlayerCard('${safeB}')">${pB}</span></div>
-        <input class="playoff-result-input" id="${matchId}-res-${tier}"
-          value="${resVal}" placeholder="3&2 / Halved"
-          oninput="savePlayoffResult('${matchId}',${tier})"/>
-        <select class="playoff-winner-select" id="${matchId}-win-${tier}"
-          onchange="savePlayoffResult('${matchId}',${tier})">
-          <option value="">—</option>
-          <option value="home" ${winVal==='home'?'selected':''}>${pA.substring(0,14)} wins</option>
-          <option value="away" ${winVal==='away'?'selected':''}>${pB.substring(0,14)} wins</option>
-          <option value="halved" ${winVal==='halved'?'selected':''}>Halved</option>
-        </select>
+      html += `
+      <div class="pog-card" style="${cardBorder}" id="pog-card-${matchId}-${tier}">
+        <div class="pog-tier-badge">Tier ${tier}</div>
+        <div class="pog-matchup">${pA} <span class="pog-vs">vs</span> ${pB}</div>
+        <div class="pog-winner-row">
+          <button class="pog-btn ${winVal==='home'?'pog-btn-active':''}"
+            onclick="setPlayoffWinner('${matchId}',${tier},'home','${safeA}','${safeB}')">
+            ${pA.split(' ').pop()} wins
+          </button>
+          <button class="pog-btn ${winVal==='halved'?'pog-btn-active':''}"
+            onclick="setPlayoffWinner('${matchId}',${tier},'halved','${safeA}','${safeB}')">
+            Halved
+          </button>
+          <button class="pog-btn ${winVal==='away'?'pog-btn-active':''}"
+            onclick="setPlayoffWinner('${matchId}',${tier},'away','${safeA}','${safeB}')">
+            ${pB.split(' ').pop()} wins
+          </button>
+        </div>
+        <input class="pog-score-input" id="${matchId}-res-${tier}"
+          value="${resVal}"
+          placeholder="Score (optional: 3&2 · 1 up · Halved)"
+          oninput="savePlayoffResult('${matchId}',${tier})" />
+        <input type="hidden" id="${matchId}-win-${tier}" value="${winVal}" />
       </div>`;
     }
   }
-  html += '</div>';
   return html;
 }
+
+async function setPlayoffWinner(matchId, tier, winner, pA, pB) {
+  if (!canEditPlayoffMatch(matchId)) { showToast('Sign in to enter results.'); return; }
+  // Update hidden input
+  const winEl = document.getElementById(`${matchId}-win-${tier}`);
+  if (winEl) winEl.value = winner;
+  // Auto-fill score if blank
+  const resEl = document.getElementById(`${matchId}-res-${tier}`);
+  if (resEl && !resEl.value.trim()) {
+    resEl.value = winner === 'halved' ? 'Halved' : '';
+  }
+  // Save
+  await savePlayoffResult(matchId, tier);
+  // Re-render just this card highlight
+  const card = document.getElementById(`pog-card-${matchId}-${tier}`);
+  if (card) {
+    card.querySelectorAll('.pog-btn').forEach(b => b.classList.remove('pog-btn-active'));
+    const btns = card.querySelectorAll('.pog-btn');
+    if (winner === 'home' && btns[0]) btns[0].classList.add('pog-btn-active');
+    if (winner === 'halved' && btns[1]) btns[1].classList.add('pog-btn-active');
+    if (winner === 'away' && btns[2]) btns[2].classList.add('pog-btn-active');
+    card.style.borderColor = 'rgba(201,168,76,0.5)';
+  }
+}
+
+
+
 
 async function savePlayoffResult(matchId, tier) {
   // Auth check — must be admin or captain of one of the teams in this matchup
@@ -4603,6 +4744,44 @@ function renderPlayoffBracket() {
     </div>`;
 }
 
+function renderPlayoffStats() {
+  const count = (obj) => Object.keys(obj).length;
+  const sf1El = document.getElementById('pstat-sf1');
+  const sf2El = document.getElementById('pstat-sf2');
+  const finEl = document.getElementById('pstat-final');
+  if (sf1El) {
+    const c = count(playoffState.sf1Results);
+    sf1El.textContent = `${c}/10`;
+    sf1El.style.color = c === 10 ? '#00e060' : c > 0 ? 'var(--gold)' : 'var(--cream-dark)';
+  }
+  if (sf2El) {
+    const c = count(playoffState.sf2Results);
+    sf2El.textContent = `${c}/10`;
+    sf2El.style.color = c === 10 ? '#00e060' : c > 0 ? 'var(--gold)' : 'var(--cream-dark)';
+  }
+  if (finEl) {
+    const c = count(playoffState.finalResults);
+    finEl.textContent = `${c}/10`;
+    finEl.style.color = c === 10 ? '#00e060' : c > 0 ? 'var(--gold)' : 'var(--cream-dark)';
+  }
+}
+
+function savePlayoffSchedule(matchId) {
+  const inp = document.getElementById(`${matchId}-schedule-input`);
+  if (!inp) return;
+  if (!playoffState.schedules) playoffState.schedules = {};
+  playoffState.schedules[matchId] = inp.value;
+  savePlayoffState();
+}
+
+function loadPlayoffSchedules() {
+  if (!playoffState.schedules) return;
+  ['sf1','sf2','final'].forEach(id => {
+    const inp = document.getElementById(`${id}-schedule-input`);
+    if (inp && playoffState.schedules[id]) inp.value = playoffState.schedules[id];
+  });
+}
+
 function canEditPlayoffMatch(matchId) {
   if (adminAuthenticated) return true;
   if (!captainAuthenticated || !captainSession) return false;
@@ -4615,10 +4794,28 @@ function canEditPlayoffMatch(matchId) {
 
 async function renderPlayoffs() {
   renderPlayoffBracket();
+  setTimeout(loadPlayoffSchedules, 50);
 
   const sf1 = playoffState.sf1, sf2 = playoffState.sf2;
   const isAdmin = adminAuthenticated;
   const isCaptain = captainAuthenticated && captainSession;
+
+  // Show sign-in prompt at top if not logged in
+  const signInBanner = document.getElementById('playoff-signin-banner');
+  if (signInBanner) {
+    if (!isAdmin && !isCaptain) {
+      signInBanner.innerHTML = `
+        <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(201,168,76,0.25);border-radius:6px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <span style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--cream-dark);letter-spacing:1px;">🔒 Sign in to enter playoff results</span>
+          <div style="display:flex;gap:8px;">
+            <button onclick="showPage('results',null)" style="background:rgba(201,168,76,0.15);border:1px solid var(--gold);color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:1px;padding:7px 14px;border-radius:3px;cursor:pointer;">Captain Login</button>
+            <button onclick="showPage('admin',null)" style="background:rgba(201,168,76,0.15);border:1px solid var(--gold);color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:1px;padding:7px 14px;border-radius:3px;cursor:pointer;">Admin Login</button>
+          </div>
+        </div>`;
+    } else {
+      signInBanner.innerHTML = '';
+    }
+  }
 
   function matchControls(matchId, teamA, teamB) {
     const canEdit = canEditPlayoffMatch(matchId);
@@ -5421,15 +5618,11 @@ async function submitMediaPost() {
   if (activeMediaTab === 'upload') {
     const file = document.getElementById('media-file-input')?.files[0];
     if (file) {
-      // Check size — warn if over 5MB
-      if (file.size > 6 * 1024 * 1024) {
-        showToast('File too large. Please use a file under 6MB or paste a link instead.');
-        return;
-      }
-      try {
-        post.mediaData = await readFileAsDataURL(file);
-        post.mediaType = file.type.startsWith('video') ? 'video' : 'image';
-      } catch(e) { showToast('Could not read file. Try a link instead.'); return; }
+      showToast('Uploading media…');
+      const url = await sbUploadFile(file, 'media');
+      if (!url) { showToast('Upload failed — try a link instead.'); return; }
+      post.mediaData = url;
+      post.mediaType = file.type.startsWith('video') ? 'video' : 'image';
     } else if (!caption) {
       showToast('Please upload a file or add a caption.'); return;
     }
@@ -5783,7 +5976,7 @@ function showPage(id, btnEl) {
 
   closeMoreMenu();
 
-  if (id === 'standings') { renderTeamStandings(); renderLatestBanner(); renderSeasonStats(); }
+  if (id === 'standings') { renderTeamStandings(); renderLatestBanner(); renderSeasonStats(); renderPlayoffStats(); }
   if (id === 'tiers') renderTierStandings();
   if (id === 'schedule') renderSchedule();
   if (id === 'results') {
@@ -5926,6 +6119,7 @@ function renderAll() {
   renderTeamStandings();
   renderLatestBanner();
   renderSeasonStats();
+  renderPlayoffStats();
 
   // Apply landing page setting — switch away from standings if needed
   if (landingPage === 'playoffs') {
