@@ -4543,10 +4543,10 @@ function calcRoundPoints(resultsObj) {
   let homeP = 0, awayP = 0;
   for (let tier = 1; tier <= 10; tier++) {
     const r = resultsObj[tier];
-    if (!r) continue;
+    if (!r || !r.winner) continue; // skip if no winner recorded
     if (r.winner === 'home') homeP += 1;
     else if (r.winner === 'away') awayP += 1;
-    else { homeP += 0.5; awayP += 0.5; }
+    else if (r.winner === 'halved') { homeP += 0.5; awayP += 0.5; }
   }
   return { homeP, awayP };
 }
@@ -4736,7 +4736,7 @@ async function updatePlayoffSummary(matchId) {
   if (!summaryEl || !match.teamA || !match.teamB) return;
 
   const { homeP, awayP } = calcRoundPoints(results);
-  const played = Object.keys(results).length;
+  const played = Object.values(results).filter(r => r && r.winner).length;
   const leader = homeP > awayP ? match.teamA : awayP > homeP ? match.teamB : null;
   const isTied = homeP === awayP && played > 0;
 
@@ -4841,9 +4841,9 @@ function renderPlayoffBracket() {
   const sf1pts = calcRoundPoints(playoffState.sf1Results);
   const sf2pts = calcRoundPoints(playoffState.sf2Results);
   const finpts = calcRoundPoints(playoffState.finalResults);
-  const sf1Done = Object.keys(playoffState.sf1Results).length === 10;
-  const sf2Done = Object.keys(playoffState.sf2Results).length === 10;
-  const finDone = Object.keys(playoffState.finalResults).length === 10;
+  const sf1Done = Object.values(playoffState.sf1Results).filter(r=>r&&r.winner).length === 10;
+  const sf2Done = Object.values(playoffState.sf2Results).filter(r=>r&&r.winner).length === 10;
+  const finDone = Object.values(playoffState.finalResults).filter(r=>r&&r.winner).length === 10;
 
   const sf1Winner = sf1Done && sf1pts.homeP !== sf1pts.awayP ? (sf1pts.homeP > sf1pts.awayP ? sf1.teamA : sf1.teamB) : null;
   const sf2Winner = sf2Done && sf2pts.homeP !== sf2pts.awayP ? (sf2pts.homeP > sf2pts.awayP ? sf2.teamA : sf2.teamB) : null;
@@ -4892,7 +4892,7 @@ function renderPlayoffBracket() {
 }
 
 function renderPlayoffStats() {
-  const count = (obj) => Object.keys(obj).length;
+  const count = (obj) => Object.values(obj).filter(r=>r&&r.winner).length;
   const sf1El = document.getElementById('pstat-sf1');
   const sf2El = document.getElementById('pstat-sf2');
   const finEl = document.getElementById('pstat-final');
@@ -5036,7 +5036,7 @@ async function renderPlayoffs() {
 
   // Champion
   const finpts = calcRoundPoints(playoffState.finalResults);
-  const finDone = Object.keys(playoffState.finalResults).length === 10;
+  const finDone = Object.values(playoffState.finalResults).filter(r=>r&&r.winner).length === 10;
   if (finDone && finpts.homeP !== finpts.awayP) {
     const champ = finpts.homeP > finpts.awayP ? playoffState.finalTeamA : playoffState.finalTeamB;
     showChampion(champ);
