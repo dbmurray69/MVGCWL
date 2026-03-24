@@ -1388,12 +1388,7 @@
     font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
     color: rgba(201,168,76,0.5);
   }
-  .card-photo-upload {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    opacity: 0; cursor: pointer; z-index: 5;
-    font-size: 0; /* hide "No file chosen" text */
-  }
+  .card-photo-upload { display: none; }
   .card-upload-badge {
     position: absolute; bottom: 10px; right: 10px; z-index: 6;
     background: rgba(13,40,24,0.85); border: 1px solid var(--gold);
@@ -2666,6 +2661,7 @@
 // ═══════════════════════════════════════════════════════
 const SB_URL = 'https://gximoajdzjhngwmbtkke.supabase.co';
 const SB_KEY = 'sb_publishable_lxCDLzV3Htgbl_f-f8WLlQ_dpACUXYb';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aW1vYWpkempobmd3bWJ0a2tlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDYxMjcsImV4cCI6MjA4OTg4MjEyN30.HV5zCNwIl2hAZS4vt2lBFC3ItsDq7AZW0VOorVZJ2tY';
 const SB_HDR = { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
 
 let sbConnected = false; // tracks whether DB is reachable
@@ -2738,27 +2734,33 @@ async function sbUpsert(table, row, onConflict) {
 // Upload a file to Supabase Storage and return its public URL
 async function sbUploadFile(file, folder) {
   try {
-    const ext = file.name ? file.name.split('.').pop().toLowerCase() : (file.type.split('/')[1] || 'bin');
+    const ext = file.name ? file.name.split('.').pop().toLowerCase() : (file.type.split('/')[1] || 'jpg');
     const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const path = `${folder}/${safeName}`;
-    console.log('Uploading to:', path, 'Type:', file.type, 'Size:', file.size);
-    const r = await fetch(`${SB_URL}/storage/v1/object/media/${path}`, {
-      method: 'POST',
-      headers: {
-        'apikey': SB_KEY,
-        'Authorization': 'Bearer ' + SB_KEY,
-        'Content-Type': file.type || 'application/octet-stream',
-        'x-upsert': 'true'
-      },
-      body: file
-    });
-    const responseText = await r.text();
-    console.log('Upload response:', r.status, responseText);
-    if (!r.ok) {
-      showToast('Upload failed: ' + r.status + ' — ' + responseText.substring(0, 80));
-      return null;
+    console.log('Uploading:', path, file.type, file.size + 'bytes');
+
+    // Try with publishable key first, fall back to anon key
+    for (const key of [SB_KEY, SB_ANON]) {
+      const r = await fetch(`${SB_URL}/storage/v1/object/media/${path}`, {
+        method: 'POST',
+        headers: {
+          'apikey': key,
+          'Authorization': 'Bearer ' + key,
+          'Content-Type': file.type || 'image/jpeg',
+          'x-upsert': 'true'
+        },
+        body: file
+      });
+      const txt = await r.text();
+      console.log('Upload result:', r.status, txt);
+      if (r.ok) return `${SB_URL}/storage/v1/object/public/media/${path}`;
+      if (r.status !== 401) {
+        showToast('Upload failed ' + r.status + ': ' + txt.substring(0, 60));
+        return null;
+      }
     }
-    return `${SB_URL}/storage/v1/object/public/media/${path}`;
+    showToast('Upload failed — auth error');
+    return null;
   } catch(e) {
     console.error('sbUploadFile error:', e);
     showToast('Upload error: ' + e.message);
@@ -3763,32 +3765,41 @@ async function handlePhotoUpload(e) {
   const file = e.target.files[0];
   if (!file) { showToast('No file selected'); return; }
   const playerName = e.target.dataset.player;
-  if (!playerName) { showToast('Error: no player selected'); return; }
+  if (!playerName) { showToast('Error: tap a player card first'); return; }
 
-  showToast('Uploading photo…');
+  showToast('📸 Uploading ' + file.name.substring(0,20) + '…');
 
-  // For HEIC files, change extension to jpg for compatibility
-  let uploadFile = file;
-  if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic')) {
-    uploadFile = new File([file], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
-  }
+  // Read as base64 for fallback
+  const reader = new FileReader();
+  reader.onload = async function(ev) {
+    const dataURL = ev.target.result;
 
-  // Upload to Supabase Storage
-  const url = await sbUploadFile(uploadFile, 'players');
-  if (!url) { showToast('Upload failed — check connection and try again.'); return; }
+    // Try Supabase Storage first
+    let uploadFile = file;
+    if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic')) {
+      uploadFile = new File([file], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+    }
+    let url = await sbUploadFile(uploadFile, 'players');
 
-  playerPhotos[playerName] = url;
+    // Fallback: store base64 in database if Storage fails
+    if (!url) {
+      showToast('Storage unavailable — saving as base64…');
+      url = dataURL;
+    }
 
-  // Save URL to player_photos table
-  await sbUpsert('player_photos', { player_name: playerName, photo_data: url }, 'player_name');
+    playerPhotos[playerName] = url;
+    await sbUpsert('player_photos', { player_name: playerName, photo_data: url }, 'player_name');
 
-  const photoEl = document.getElementById('card-photo');
-  const placeholder = document.getElementById('card-photo-placeholder');
-  if (placeholder) placeholder.style.display = 'none';
-  if (photoEl) { photoEl.src = url; photoEl.style.display = 'block'; }
-  showToast('Photo saved for ' + playerName + ' ✓');
-  if (document.getElementById('page-roster')?.classList.contains('active')) renderRoster();
-  renderShameWall();
+    const photoEl = document.getElementById('card-photo');
+    const placeholder = document.getElementById('card-photo-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
+    if (photoEl) { photoEl.src = url; photoEl.style.display = 'block'; }
+    showToast('✓ Photo saved for ' + playerName);
+    if (document.getElementById('page-roster')?.classList.contains('active')) renderRoster();
+    renderShameWall();
+  };
+  reader.onerror = () => showToast('Could not read file — try a different photo');
+  reader.readAsDataURL(file);
 }
 
 function playerLink(name) {
