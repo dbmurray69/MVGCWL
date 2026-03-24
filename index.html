@@ -4027,54 +4027,57 @@ async function postTodaySchedule() {
 }
 
 async function postRecentResults() {
-  const lastPostKey = 'mvgc_last_results_post';
-  const lastPostTime = parseInt(localStorage.getItem(lastPostKey) || '0');
+  await loadResultLog();
+
+  const postedKeysKey = 'mvgc_posted_result_keys';
+  const postedKeys = new Set(JSON.parse(localStorage.getItem(postedKeysKey) || '[]'));
   const now = Date.now();
+  const todayStr = new Date().toDateString();
 
-  const allMatches = [
-    { id:'sf1', results:playoffState.sf1Results, teamA:playoffState.sf1?.teamA, teamB:playoffState.sf1?.teamB, round:'Semifinal 1' },
-    { id:'sf2', results:playoffState.sf2Results, teamA:playoffState.sf2?.teamA, teamB:playoffState.sf2?.teamB, round:'Semifinal 2' },
-    { id:'final', results:playoffState.finalResults, teamA:playoffState.finalTeamA, teamB:playoffState.finalTeamB, round:'Final' },
-  ];
+  const playoffRounds = ['Playoff SF1', 'Playoff SF2', 'Playoff Final'];
 
-  // Get all played results from audit log since last post
-  const recentFromLog = resultLog.filter(r => {
-    const t = new Date(r.created_at).getTime();
-    return t > lastPostTime && (r.week === 'Playoff SF1' || r.week === 'Playoff SF2' || r.week === 'Playoff Final');
-  });
-
-  // Build lines from recent log entries, deduped by key
-  const seen = new Set();
-  const lines = [];
-  recentFromLog.forEach(r => {
+  // Dedup audit log — keep most recent entry per matchup
+  const deduped = new Map();
+  resultLog.filter(r => playoffRounds.includes(r.week) && r.winner).forEach(r => {
     const key = `${r.week}-T${r.tier}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    const winnerName = r.winner === 'home' ? r.home : r.winner === 'away' ? r.away : null;
-    const resultStr = r.result ? ` (${r.result})` : '';
-    const tierLabel = r.tier ? ` T${r.tier}` : '';
-    if (r.winner === 'halved') lines.push(`  ${tierLabel} ${r.home} vs ${r.away} — Halved${resultStr} · ${r.week}`);
-    else if (winnerName) { const loser = winnerName === r.home ? r.away : r.home; lines.push(`  ${tierLabel} ${winnerName} def. ${loser}${resultStr} · ${r.week}`); }
+    if (!deduped.has(key) || new Date(r.ts) > new Date(deduped.get(key).ts))
+      deduped.set(key, r);
   });
 
-  // Fallback: if no audit log entries, use all current results
-  if (!lines.length) {
-    allMatches.forEach(match => {
-      if (!match.teamA || !match.teamB) return;
-      for (let tier = 1; tier <= 10; tier++) {
-        const r = match.results[tier];
-        if (!r?.winner) continue;
-        const pA = getPlayerForTeamTier(match.teamA, tier) || match.teamA;
-        const pB = getPlayerForTeamTier(match.teamB, tier) || match.teamB;
-        const resultStr = r.result ? ` (${r.result})` : '';
-        if (r.winner === 'halved') lines.push(`  T${tier} ${pA} vs ${pB} — Halved${resultStr} · ${match.round}`);
-        else { const w = r.winner === 'home' ? pA : pB; const l = r.winner === 'home' ? pB : pA; lines.push(`  T${tier} ${w} def. ${l}${resultStr} · ${match.round}`); }
-      }
-    });
-  }
+  // Build inclusion list:
+  // - Always include today's results
+  // - Include past results only if never posted before
+  const toPost = [...deduped.values()].filter(r => {
+    const key = `${r.week}-T${r.tier}`;
+    const isToday = new Date(r.ts).toDateString() === todayStr;
+    const neverPosted = !postedKeys.has(key);
+    return isToday || neverPosted;
+  });
 
-  if (!lines.length) { showToast('No new playoff results since last post.'); return; }
+  if (!toPost.length) { showToast('No new results to post.'); return; }
 
+  // Sort by round then tier
+  const roundOrder = { 'Playoff SF1': 1, 'Playoff SF2': 2, 'Playoff Final': 3 };
+  toPost.sort((a,b) => {
+    const rd = (roundOrder[a.week]||9) - (roundOrder[b.week]||9);
+    return rd !== 0 ? rd : (a.tier||0) - (b.tier||0);
+  });
+
+  const lines = [];
+  toPost.forEach(r => {
+    const roundLabel = r.week.replace('Playoff ', '');
+    const resultStr = r.result ? ` (${r.result})` : '';
+    const tierStr = r.tier ? `T${r.tier} ` : '';
+    if (r.winner === 'halved') {
+      lines.push(`  ${tierStr}${r.home} vs ${r.away} — Halved${resultStr} · ${roundLabel}`);
+    } else {
+      const w = r.winner === 'home' ? r.home : r.away;
+      const l = r.winner === 'home' ? r.away : r.home;
+      lines.push(`  ${tierStr}${w} def. ${l}${resultStr} · ${roundLabel}`);
+    }
+  });
+
+  // Current scores
   const sf1pts = calcRoundPoints(playoffState.sf1Results);
   const sf2pts = calcRoundPoints(playoffState.sf2Results);
   let scoreStr = '';
@@ -4083,12 +4086,24 @@ async function postRecentResults() {
 
   const text = `📊 Playoff Results Update\n\n${lines.join('\n')}\n\nCurrent Scores:${scoreStr}`;
   await sbInsert('announcements', { text, author: 'Commish' });
-  localStorage.setItem(lastPostKey, now.toString());
-  await loadAnnouncements(); renderLatestBanner();
+
+  // Mark ALL posted results as posted (today's will re-post next time, old ones won't)
+  toPost.forEach(r => {
+    const isToday = new Date(r.ts).toDateString() === todayStr;
+    if (!isToday) postedKeys.add(`${r.week}-T${r.tier}`); // only mark old results as done
+  });
+  localStorage.setItem(postedKeysKey, JSON.stringify([...postedKeys]));
+
+  await loadAnnouncements();
+  renderLatestBanner();
+  if (document.getElementById('page-announcements')?.classList.contains('active')) renderAnnouncementsPage();
   const status = document.getElementById('quick-post-status');
-  if (status) status.textContent = `Results posted · ${new Date().toLocaleTimeString()}`;
-  showToast('Results posted to News ✓');
+  if (status) status.textContent = `${lines.length} result${lines.length>1?'s':''} posted · ${new Date().toLocaleTimeString()}`;
+  showToast(`${lines.length} result${lines.length>1?'s':''} posted to News ✓`);
 }
+
+
+
 
 function renderTeamStandings() {
   if (!state.teams.length) {
@@ -5509,6 +5524,7 @@ function canEditPlayoffMatch(matchId) {
 async function renderPlayoffs() {
   renderPlayoffBracket();
   setTimeout(loadPlayoffSchedules, 50);
+  showAdminQuickPost();
 
   const sf1 = playoffState.sf1, sf2 = playoffState.sf2;
   const isAdmin = adminAuthenticated;
@@ -6342,6 +6358,7 @@ function attemptAdminLogin() {
     adminAuthenticated = true;
     try { sessionStorage.setItem('mvgc_admin_auth', 'true'); } catch(e) {}
     showAdminContent();
+    showAdminQuickPost();
     // Clear fields for security
     document.getElementById('admin-username').value = '';
     document.getElementById('admin-password').value = '';
