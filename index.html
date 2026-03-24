@@ -1611,9 +1611,9 @@
 </header>
 
 <nav id="main-nav">
-  <button class="nav-btn active" onclick="showPage('standings',this)"><span class="nav-icon">🏅</span><span>Standings</span></button>
+  <button class="nav-btn" onclick="showPage('standings',this)"><span class="nav-icon">🏅</span><span>Standings</span></button>
   <button class="nav-btn" onclick="showPage('tiers',this)"><span class="nav-icon">📊</span><span>Tiers</span></button>
-  <button class="nav-btn" onclick="showPage('playoffs',this)"><span class="nav-icon">🏆</span><span>Playoffs</span></button>
+  <button class="nav-btn active" onclick="showPage('playoffs',this)"><span class="nav-icon">🏆</span><span>Playoffs</span></button>
   <button class="nav-btn" onclick="toggleMoreMenu(this)"><span class="nav-icon">☰</span><span>More</span></button>
   <!-- hidden on desktop, appear when More is open on mobile -->
   <button class="nav-btn nav-more-item" onclick="showPage('instructions',this)"><span class="nav-icon">📖</span><span>How To</span></button>
@@ -1649,7 +1649,7 @@
 <main>
 
   <!-- TEAM STANDINGS -->
-  <div id="page-standings" class="page active">
+  <div id="page-standings" class="page">
     <!-- Latest announcement banner -->
     <div id="latest-announcement-banner"></div>
     <h2 class="section-title">Team Standings</h2>
@@ -1983,7 +1983,7 @@
   </div>
 
   <!-- PLAYOFFS -->
-  <div id="page-playoffs" class="page">
+  <div id="page-playoffs" class="page active">
     <div id="playoff-announcement-banner"></div>
     <div id="playoff-signin-banner"></div>
     <h2 class="section-title">Playoffs 🏆</h2>
@@ -5146,7 +5146,7 @@ function buildBannerHTML() {
 }
 
 // ── LANDING PAGE SETTING ──
-let landingPage = 'standings'; // default
+let landingPage = 'playoffs'; // default
 
 function loadLandingPage() {
   try {
