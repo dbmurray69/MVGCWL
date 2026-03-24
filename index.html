@@ -2038,7 +2038,7 @@
         </div>
         <div class="form-group" style="margin-bottom:8px;position:relative;">
           <label class="form-label">Password</label>
-          <input class="form-input admin-login-input" id="captain-password" type="password" placeholder="Last 7 digits of your phone"
+          <input class="form-input admin-login-input" id="captain-password" type="password" placeholder="Password"
             autocomplete="current-password" onkeydown="if(event.key==='Enter')attemptCaptainLogin()" />
           <button onclick="toggleCaptainPasswordVisibility()" style="position:absolute;right:10px;bottom:10px;background:none;border:none;cursor:pointer;color:var(--gold);opacity:0.6;font-size:14px;" title="Show/hide">👁</button>
         </div>
@@ -6980,15 +6980,24 @@ function renderAll() {
   }, 30000); // every 30 seconds
 
   // Fetch visit count from GoatCounter
-  fetch('https://murrvalley.goatcounter.com/counter/TOTAL.json')
+  fetch('https://murrvalley.goatcounter.com/counter//index.html.json')
     .then(r => r.json())
     .then(d => {
       const el = document.getElementById('visit-count');
-      if (el && d.count) el.textContent = Number(d.count).toLocaleString();
+      if (el && d.count) el.textContent = d.count;
     })
     .catch(() => {
-      const el = document.getElementById('visit-count');
-      if (el) el.parentElement.style.display = 'none';
+      // Fallback: try TOTAL
+      fetch('https://murrvalley.goatcounter.com/counter/TOTAL.json')
+        .then(r => r.json())
+        .then(d => {
+          const el = document.getElementById('visit-count');
+          if (el && d.count) el.textContent = d.count;
+        })
+        .catch(() => {
+          const el = document.getElementById('visit-count');
+          if (el) el.parentElement.style.display = 'none';
+        });
     });
   if (!playoffState.sf1.teamA) {
     playoffState.sf1 = { teamA: 'Monarchs', teamB: 'Pinseeking Powderhounds' };
