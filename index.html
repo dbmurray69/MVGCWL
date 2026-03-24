@@ -759,6 +759,25 @@
   }
   .pog-clear-btn:hover { opacity: 1; background: rgba(139,32,32,0.15); }
 
+  .pog-time-input {
+    width: 100%; box-sizing: border-box;
+    background: rgba(201,168,76,0.06);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 6px;
+    color: var(--cream-dark);
+    font-family: 'Courier Prime', monospace;
+    font-size: 13px;
+    padding: 9px 14px;
+    margin-bottom: 10px;
+  }
+  .pog-time-input:focus { outline: none; border-color: var(--gold); color: var(--cream); }
+  .pog-time-input::placeholder { opacity: 0.35; }
+  .pog-tee-time-display {
+    font-family: 'Courier Prime', monospace;
+    font-size: 12px; color: var(--gold); opacity: 0.8;
+    margin-bottom: 6px; letter-spacing: 0.5px;
+  }
+
   /* ── PLAYOFF SCHEDULE INPUT ── */
   .playoff-schedule-row { display:flex; align-items:center; gap:10px; margin:6px 0 14px; }
   .playoff-schedule-icon { font-size:16px; flex-shrink:0; }
@@ -4421,6 +4440,17 @@ async function loadPlayoffState() {
       if (s) playoffState = JSON.parse(s);
     } catch(e) {}
   }
+
+  // Pre-fill default tee times if not already set
+  const sf1Times = { 1:'SAT 3 PM', 2:'SAT 3 PM', 3:'TUES 2:30', 4:'WED', 5:'', 6:'', 7:'', 8:'', 9:'', 10:'' };
+  const sf2Times = { 1:'THUR 10:00', 2:'THUR 10:00', 3:'FRI 11:15', 4:'SUN 2:00', 5:'SUN 2:00', 6:'THUR 3:30', 7:'', 8:'FRI 1:15', 9:'THUR 12:30', 10:'THUR 4 PM' };
+
+  for (let t = 1; t <= 10; t++) {
+    if (!playoffState.sf1Results[t]) playoffState.sf1Results[t] = {};
+    if (!playoffState.sf1Results[t].teeTime && sf1Times[t]) playoffState.sf1Results[t].teeTime = sf1Times[t];
+    if (!playoffState.sf2Results[t]) playoffState.sf2Results[t] = {};
+    if (!playoffState.sf2Results[t].teeTime && sf2Times[t]) playoffState.sf2Results[t].teeTime = sf2Times[t];
+  }
 }
 
 async function savePlayoffState() {
@@ -4501,6 +4531,7 @@ function buildPlayoffTierGrid(matchId, teamA, teamB, resultsObj, readonly) {
       <div class="pog-card" style="${cardBorder}">
         <div class="pog-tier-badge">Tier ${tier}</div>
         <div class="pog-matchup">${pA} <span class="pog-vs">vs</span> ${pB}</div>
+        ${existing && existing.teeTime ? `<div class="pog-tee-time-display">⏰ ${existing.teeTime}</div>` : ''}
         ${hasResult ? `<div class="pog-result-display">
           <span class="pog-score-badge">${resVal||'—'}</span>
           <span class="pog-winner-badge">${winLabel} wins</span>
@@ -4514,6 +4545,10 @@ function buildPlayoffTierGrid(matchId, teamA, teamB, resultsObj, readonly) {
           ${hasResult ? `<button class="pog-clear-btn" onclick="clearPlayoffResult('${matchId}',${tier})">✕ Clear</button>` : ''}
         </div>
         <div class="pog-matchup">${pA} <span class="pog-vs">vs</span> ${pB}</div>
+        <input class="pog-time-input" id="${matchId}-time-${tier}"
+          value="${existing && existing.teeTime ? existing.teeTime : ''}"
+          placeholder="⏰ Tee time (e.g. Sat 9:04 AM)"
+          oninput="savePlayoffTeeTime('${matchId}',${tier})" />
         <div class="pog-winner-row">
           <button class="pog-btn ${winVal==='home'?'pog-btn-active':''}"
             onclick="setPlayoffWinner('${matchId}',${tier},'home','${safeA}','${safeB}')">
@@ -4566,6 +4601,18 @@ async function setPlayoffWinner(matchId, tier, winner, pA, pB) {
 
 
 
+async function savePlayoffTeeTime(matchId, tier) {
+  if (!canEditPlayoffMatch(matchId)) return;
+  const inp = document.getElementById(`${matchId}-time-${tier}`);
+  if (!inp) return;
+  const target = matchId === 'sf1' ? playoffState.sf1Results
+               : matchId === 'sf2' ? playoffState.sf2Results
+               : playoffState.finalResults;
+  if (!target[tier]) target[tier] = {};
+  target[tier].teeTime = inp.value;
+  await savePlayoffState();
+}
+
 async function clearPlayoffResult(matchId, tier) {
   if (!canEditPlayoffMatch(matchId)) { showToast('Sign in to clear results.'); return; }
 
@@ -4573,7 +4620,10 @@ async function clearPlayoffResult(matchId, tier) {
                : matchId === 'sf2' ? playoffState.sf2Results
                : playoffState.finalResults;
 
+  // Preserve tee time when clearing result
+  const savedTeeTime = target[tier] ? target[tier].teeTime : null;
   delete target[tier];
+  if (savedTeeTime) { target[tier] = { teeTime: savedTeeTime }; }
 
   // Clear the visible inputs immediately
   const resEl = document.getElementById(`${matchId}-res-${tier}`);
@@ -4615,7 +4665,9 @@ async function savePlayoffResult(matchId, tier) {
   const target = matchId === 'sf1' ? playoffState.sf1Results
                : matchId === 'sf2' ? playoffState.sf2Results
                : playoffState.finalResults;
+  const existingTeeTime = target[tier] ? target[tier].teeTime : null;
   target[tier] = { result, winner };
+  if (existingTeeTime) target[tier].teeTime = existingTeeTime;
   await savePlayoffState();
   await updatePlayoffSummary(matchId);
 
@@ -4715,7 +4767,9 @@ async function saveAllPlayoffResults(matchId) {
     if (resEl && winEl && winEl.value) {
       const result = resEl.value.trim();
       const winner = winEl.value;
+      const prevTime = target[tier] ? target[tier].teeTime : null;
       target[tier] = { result, winner };
+      if (prevTime) target[tier].teeTime = prevTime;
       logResult(roundLabel, matchup.teamA || 'TBD', matchup.teamB || 'TBD', tier, result, winner);
     }
   }
