@@ -3768,37 +3768,45 @@ async function handlePhotoUpload(e) {
   if (!playerName) { showToast('Error: tap a player card first'); return; }
 
   showToast('📸 Uploading ' + file.name.substring(0,20) + '…');
+  const debug = [`File: ${file.name}`, `Type: ${file.type}`, `Size: ${file.size}`, `Player: ${playerName}`];
 
-  // Read as base64 for fallback
   const reader = new FileReader();
   reader.onload = async function(ev) {
     const dataURL = ev.target.result;
+    debug.push('FileReader OK');
 
-    // Try Supabase Storage first
     let uploadFile = file;
     if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic')) {
       uploadFile = new File([file], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+      debug.push('Converted HEIC');
     }
+
     let url = await sbUploadFile(uploadFile, 'players');
+    debug.push(`Storage URL: ${url ? url.substring(0,50) : 'FAILED'}`);
 
     // Fallback: store base64 in database if Storage fails
     if (!url) {
-      showToast('Storage unavailable — saving as base64…');
+      debug.push('Using base64 fallback');
       url = dataURL;
     }
 
     playerPhotos[playerName] = url;
-    await sbUpsert('player_photos', { player_name: playerName, photo_data: url }, 'player_name');
+    const saved = await sbUpsert('player_photos', { player_name: playerName, photo_data: url }, 'player_name');
+    debug.push(`DB save: ${saved ? 'OK' : 'FAILED'}`);
 
     const photoEl = document.getElementById('card-photo');
     const placeholder = document.getElementById('card-photo-placeholder');
     if (placeholder) placeholder.style.display = 'none';
     if (photoEl) { photoEl.src = url; photoEl.style.display = 'block'; }
     showToast('✓ Photo saved for ' + playerName);
+    alert('DEBUG:\n' + debug.join('\n'));
     if (document.getElementById('page-roster')?.classList.contains('active')) renderRoster();
     renderShameWall();
   };
-  reader.onerror = () => showToast('Could not read file — try a different photo');
+  reader.onerror = (err) => { 
+    alert('FileReader error:\n' + err);
+    showToast('Could not read file — try a different photo');
+  };
   reader.readAsDataURL(file);
 }
 
