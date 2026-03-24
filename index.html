@@ -7009,25 +7009,16 @@ function renderAll() {
     }
   }, 30000); // every 30 seconds
 
-  // Fetch visit count from GoatCounter
-  fetch('https://murrvalley.goatcounter.com/counter//index.html.json')
-    .then(r => r.json())
+  // Fetch visit count from GoatCounter (requires "Allow visitor counts" enabled in GoatCounter settings)
+  fetch('https://murrvalley.goatcounter.com/counter/%2F.json')
+    .then(r => r.ok ? r.json() : Promise.reject())
     .then(d => {
       const el = document.getElementById('visit-count');
       if (el && d.count) el.textContent = d.count;
     })
     .catch(() => {
-      // Fallback: try TOTAL
-      fetch('https://murrvalley.goatcounter.com/counter/TOTAL.json')
-        .then(r => r.json())
-        .then(d => {
-          const el = document.getElementById('visit-count');
-          if (el && d.count) el.textContent = d.count;
-        })
-        .catch(() => {
-          const el = document.getElementById('visit-count');
-          if (el) el.parentElement.style.display = 'none';
-        });
+      const el = document.getElementById('visit-count');
+      if (el) el.parentElement.style.display = 'none';
     });
   if (!playoffState.sf1.teamA) {
     playoffState.sf1 = { teamA: 'Monarchs', teamB: 'Pinseeking Powderhounds' };
