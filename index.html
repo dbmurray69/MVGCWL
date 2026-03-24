@@ -4033,11 +4033,19 @@ async function postRecentResults() {
   const postedKeys = new Set(JSON.parse(localStorage.getItem(postedKeysKey) || '[]'));
   const now = Date.now();
   const cutoff24h = now - (24 * 60 * 60 * 1000);
+
   const playoffRounds = ['Playoff SF1', 'Playoff SF2', 'Playoff Final'];
 
-  // Dedup — keep most recent entry per matchup
+  // Only include entries that have an EXPLICIT winner set (home/away/halved)
+  // Never include tee-time-only entries
+  const validWinners = ['home', 'away', 'halved'];
+  const playoffEntries = resultLog.filter(r =>
+    playoffRounds.includes(r.week) && validWinners.includes(r.winner)
+  );
+
+  // Dedup — keep most recent entry per matchup tier
   const deduped = new Map();
-  resultLog.filter(r => playoffRounds.includes(r.week) && r.winner).forEach(r => {
+  playoffEntries.forEach(r => {
     const key = `${r.week}-T${r.tier}`;
     if (!deduped.has(key) || new Date(r.ts) > new Date(deduped.get(key).ts))
       deduped.set(key, r);
@@ -4060,42 +4068,61 @@ async function postRecentResults() {
     return rd !== 0 ? rd : (a.tier||0) - (b.tier||0);
   });
 
-  // One line per result
-  const resultLines = toPost.map(r => {
+  // Group by round
+  const grouped = {};
+  toPost.forEach(r => {
+    const round = r.week.replace('Playoff ', '');
+    if (!grouped[round]) grouped[round] = [];
+
+    // Look up player names using team name stored in home/away fields
     const homeTeam = r.week === 'Playoff SF1' ? playoffState.sf1?.teamA
                    : r.week === 'Playoff SF2' ? playoffState.sf2?.teamA
                    : playoffState.finalTeamA;
     const awayTeam = r.week === 'Playoff SF1' ? playoffState.sf1?.teamB
                    : r.week === 'Playoff SF2' ? playoffState.sf2?.teamB
                    : playoffState.finalTeamB;
-    const homePlayer = getPlayerForTeamTier(homeTeam, r.tier) || '?';
-    const awayPlayer = getPlayerForTeamTier(awayTeam, r.tier) || '?';
-    const score = r.result ? ` ${r.result}` : '';
-    const round = r.week.replace('Playoff ', '');
+    const homePlayer = getPlayerForTeamTier(homeTeam, r.tier) || '';
+    const awayPlayer = getPlayerForTeamTier(awayTeam, r.tier) || '';
+    const resultStr = r.result ? ' ' + r.result : '';
 
+    let line = '';
     if (r.winner === 'halved') {
-      return `${homePlayer} (${homeTeam}) vs ${awayPlayer} (${awayTeam}) — Halved${score} [${round} T${r.tier}]`;
+      line = `${homePlayer} (${r.home}) vs ${awayPlayer} (${r.away}) — Halved${resultStr}`;
     } else {
-      const winPlayer  = r.winner === 'home' ? homePlayer : awayPlayer;
-      const winTeam    = r.winner === 'home' ? homeTeam   : awayTeam;
+      const winPlayer = r.winner === 'home' ? homePlayer : awayPlayer;
+      const winTeam   = r.winner === 'home' ? r.home : r.away;
       const losePlayer = r.winner === 'home' ? awayPlayer : homePlayer;
-      const loseTeam   = r.winner === 'home' ? awayTeam   : homeTeam;
-      return `${winPlayer} (${winTeam}) def. ${losePlayer} (${loseTeam})${score} [${round} T${r.tier}]`;
+      const loseTeam   = r.winner === 'home' ? r.away : r.home;
+      line = `${winPlayer} (${winTeam}) def. ${losePlayer} (${loseTeam})${resultStr}`;
     }
+    grouped[round].push(line);
   });
 
-  // Scores
+  // Build text
+  const today = new Date();
+  const dateLabel = today.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  let sections = [`Playoff Results — ${dateLabel}\n`];
+  ['SF1','SF2','Final'].forEach(round => {
+    if (!grouped[round]) return;
+    sections.push(round === 'SF1' ? 'Semifinal 1' : round === 'SF2' ? 'Semifinal 2' : 'Championship Final');
+    grouped[round].forEach(line => sections.push(line));
+    sections.push('');
+  });
+
+  // Current scores
   const sf1pts = calcRoundPoints(playoffState.sf1Results);
   const sf2pts = calcRoundPoints(playoffState.sf2Results);
   const sf1played = Object.values(playoffState.sf1Results).filter(r=>r&&r.winner).length;
   const sf2played = Object.values(playoffState.sf2Results).filter(r=>r&&r.winner).length;
-  let scoreLines = 'Scores:';
-  if (playoffState.sf1?.teamA && sf1played > 0)
-    scoreLines += `\n${playoffState.sf1.teamA} ${sf1pts.homeP} – ${sf1pts.awayP} ${playoffState.sf1.teamB} (${sf1played}/10)`;
-  if (playoffState.sf2?.teamA && sf2played > 0)
-    scoreLines += `\n${playoffState.sf2.teamA} ${sf2pts.homeP} – ${sf2pts.awayP} ${playoffState.sf2.teamB} (${sf2played}/10)`;
+  if (sf1played > 0 || sf2played > 0) {
+    sections.push('Scores');
+    if (playoffState.sf1?.teamA && sf1played > 0)
+      sections.push(`${playoffState.sf1.teamA} ${sf1pts.homeP} – ${sf1pts.awayP} ${playoffState.sf1.teamB} (${sf1played}/10)`);
+    if (playoffState.sf2?.teamA && sf2played > 0)
+      sections.push(`${playoffState.sf2.teamA} ${sf2pts.homeP} – ${sf2pts.awayP} ${playoffState.sf2.teamB} (${sf2played}/10)`);
+  }
 
-  const text = `Playoff Results\n\n${resultLines.join('\n')}\n\n${scoreLines}`;
+  const text = sections.join('\n');
 
   let inserted = await sbInsert('announcements', { text, author: 'Commish' });
   if (!inserted) {
@@ -4107,10 +4134,9 @@ async function postRecentResults() {
     if (!r2.ok) { showToast('Failed to post — database offline.'); return; }
   }
 
-  // Mark older results as posted
+  // Mark older results as posted (recent ones stay untracked to re-post tomorrow)
   toPost.forEach(r => {
-    if (new Date(r.ts).getTime() < cutoff24h)
-      postedKeys.add(`${r.week}-T${r.tier}`);
+    if (new Date(r.ts).getTime() < cutoff24h) postedKeys.add(`${r.week}-T${r.tier}`);
   });
   localStorage.setItem(postedKeysKey, JSON.stringify([...postedKeys]));
 
@@ -4123,6 +4149,7 @@ async function postRecentResults() {
   if (status) status.textContent = `${toPost.length} result${toPost.length>1?'s':''} posted · ${new Date().toLocaleTimeString()}`;
   showToast(`${toPost.length} result${toPost.length>1?'s':''} posted to News`);
 }
+
 
 
 
