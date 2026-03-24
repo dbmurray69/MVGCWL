@@ -3799,7 +3799,6 @@ async function handlePhotoUpload(e) {
     if (placeholder) placeholder.style.display = 'none';
     if (photoEl) { photoEl.src = url; photoEl.style.display = 'block'; }
     showToast('✓ Photo saved for ' + playerName);
-    alert('DEBUG:\n' + debug.join('\n'));
     if (document.getElementById('page-roster')?.classList.contains('active')) renderRoster();
     renderShameWall();
   };
@@ -4727,15 +4726,28 @@ async function attachEntryMedia(event, key, wallType) {
   if (!file) return;
   showToast('Uploading media…');
   try {
-    const url = await sbUploadFile(file, 'entries');
-    if (!url) { showToast('Upload failed — try again.'); return; }
     const type = file.type.startsWith('video') ? 'video' : 'image';
+
+    // Try Supabase Storage first
+    let url = await sbUploadFile(file, 'entries');
+
+    // Fallback to base64 if Storage fails
+    if (!url) {
+      showToast('Saving locally…');
+      url = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
     entryMedia[key] = { src: url, type };
     saveEntryMedia();
     showToast('Media saved ✓');
     if (wallType === 'shame') renderShameWall();
     else renderAceWall();
-  } catch(e) { showToast('Failed to save media.'); }
+  } catch(e) { showToast('Failed to save media: ' + e.message); }
 }
 
 async function recordAce() {
@@ -4753,12 +4765,17 @@ async function recordAce() {
   // Handle media file
   const mediaFile = document.getElementById('ace-media').files[0];
   if (mediaFile) {
+    const mType = mediaFile.type.startsWith('video') ? 'video' : 'image';
     sbUploadFile(mediaFile, 'aces').then(url => {
       if (url) {
-        entryMedia[aceId] = { src: url, type: mediaFile.type.startsWith('video') ? 'video' : 'image' };
-        saveEntryMedia();
+        entryMedia[aceId] = { src: url, type: mType };
+        saveEntryMedia(); renderAceWall();
+      } else {
+        // fallback to base64
+        const r = new FileReader();
+        r.onload = e => { entryMedia[aceId] = { src: e.target.result, type: mType }; saveEntryMedia(); renderAceWall(); };
+        r.readAsDataURL(mediaFile);
       }
-      renderAceWall();
     });
   } else {
     renderAceWall();
@@ -4783,12 +4800,17 @@ function recordShameEntry() {
 
   const mediaFile = document.getElementById('shame-media').files[0];
   if (mediaFile) {
+    const mType = mediaFile.type.startsWith('video') ? 'video' : 'image';
     sbUploadFile(mediaFile, 'shame').then(url => {
       if (url) {
-        entryMedia[`shame-custom-${idx}`] = { src: url, type: mediaFile.type.startsWith('video') ? 'video' : 'image' };
-        saveEntryMedia();
+        entryMedia[`shame-custom-${idx}`] = { src: url, type: mType };
+        saveEntryMedia(); renderShameWall();
+      } else {
+        // fallback to base64
+        const r = new FileReader();
+        r.onload = e => { entryMedia[`shame-custom-${idx}`] = { src: e.target.result, type: mType }; saveEntryMedia(); renderShameWall(); };
+        r.readAsDataURL(mediaFile);
       }
-      renderShameWall();
     });
   } else {
     renderShameWall();
@@ -6258,8 +6280,11 @@ async function submitMediaPost() {
     const file = document.getElementById('media-file-input')?.files[0];
     if (file) {
       showToast('Uploading media…');
-      const url = await sbUploadFile(file, 'media');
-      if (!url) { showToast('Upload failed — try a link instead.'); return; }
+      let url = await sbUploadFile(file, 'media');
+      if (!url) {
+        // fallback to base64
+        url = await new Promise((res,rej) => { const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsDataURL(file); });
+      }
       post.mediaData = url;
       post.mediaType = file.type.startsWith('video') ? 'video' : 'image';
     } else if (!caption) {
