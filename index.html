@@ -543,8 +543,8 @@
 
     .tier-grid { grid-template-columns: 1fr; gap: 12px; }
     /* Tier standings tables: scrollable on mobile, never hide +/- column */
-    #tier-standings-grid .card { overflow-x: auto; padding: 12px 10px; }
-    #tier-standings-grid .standings-table { min-width: 380px; }
+    #tier-standings-grid .card { overflow-x: auto; padding: 12px 6px; }
+    #tier-standings-grid .standings-table { min-width: 420px; }
 
     .matchup-row { padding: 10px 12px; flex-wrap: wrap; }
     .matchup-teams { font-size: 14px; }
@@ -948,7 +948,33 @@
     .pschedule-players { font-size: 14px; }
   }
 
-  /* ── ANNOUNCEMENT BANNER ── */
+  /* ── ADMIN QUICK-POST BAR ── */
+  .admin-quick-bar {
+    background: linear-gradient(135deg, rgba(201,168,76,0.08), rgba(13,42,26,0.6));
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .admin-quick-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  .admin-quick-btn {
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.4);
+    color: var(--gold);
+    font-family: 'Courier Prime', monospace;
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 9px 16px; border-radius: 6px;
+    cursor: pointer; transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .admin-quick-btn:hover { background: rgba(201,168,76,0.22); border-color: var(--gold); }
+  .admin-quick-btn:active { transform: scale(0.97); }
+  .admin-quick-status {
+    font-family: 'Courier Prime', monospace; font-size: 10px;
+    color: var(--cream-dark); opacity: 0.5; letter-spacing: 1px;
+  }
   .announcement-banner {
     background: linear-gradient(135deg, rgba(201,168,76,0.18), rgba(26,66,40,0.5));
     border: 1px solid var(--gold);
@@ -1768,6 +1794,7 @@
   <div id="page-standings" class="page">
     <!-- Latest announcement banner -->
     <div id="latest-announcement-banner"></div>
+
     <h2 class="section-title">Team Standings</h2>
     <p class="section-subtitle">Season record through Week <span id="current-week-label">0</span> of 9</p>
     <div class="stat-row" id="standings-stats"></div>
@@ -2102,6 +2129,16 @@
   <div id="page-playoffs" class="page active">
     <div id="playoff-announcement-banner"></div>
     <div id="playoff-signin-banner"></div>
+    <!-- Admin quick-post bar -->
+    <div id="admin-quick-post" style="display:none;">
+      <div class="admin-quick-bar">
+        <div class="admin-quick-btns">
+          <button class="admin-quick-btn" onclick="postTodaySchedule()">📅 Post Today's Schedule</button>
+          <button class="admin-quick-btn" onclick="postRecentResults()">📊 Post Recent Results</button>
+        </div>
+        <div id="quick-post-status" class="admin-quick-status"></div>
+      </div>
+    </div>
     <h2 class="section-title">Playoffs 🏆</h2>
     <p class="section-subtitle">Single-elimination — Semifinals → Championship Final</p>
 
@@ -3935,6 +3972,124 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePlayerC
 //  RENDER FUNCTIONS
 // ═══════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════
+//  ADMIN QUICK-POST BUTTONS
+// ═══════════════════════════════════════════════════════
+
+function showAdminQuickPost() {
+  const el = document.getElementById('admin-quick-post');
+  if (el) el.style.display = adminAuthenticated ? 'block' : 'none';
+}
+
+async function postTodaySchedule() {
+  const today = new Date();
+  const todayStr = today.toDateString();
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const DAY_OFFSET = { 'MON':0,'TUES':1,'TUE':1,'WED':2,'THUR':3,'THU':3,'FRI':4,'SAT':5,'SUN':6 };
+  const SF_WEEK_START  = new Date(2026, 2, 23);
+  const FIN_WEEK_START = new Date(2026, 2, 31);
+  const lines = [];
+  const allMatches = [
+    { id:'sf1', results:playoffState.sf1Results, teamA:playoffState.sf1?.teamA, teamB:playoffState.sf1?.teamB, round:'Semifinal 1' },
+    { id:'sf2', results:playoffState.sf2Results, teamA:playoffState.sf2?.teamA, teamB:playoffState.sf2?.teamB, round:'Semifinal 2' },
+    { id:'final', results:playoffState.finalResults, teamA:playoffState.finalTeamA, teamB:playoffState.finalTeamB, round:'Final' },
+  ];
+  allMatches.forEach(match => {
+    if (!match.teamA || !match.teamB) return;
+    const teeTimes = [];
+    for (let tier = 1; tier <= 10; tier++) {
+      const r = match.results[tier];
+      const teeTime = r?.teeTime;
+      if (!teeTime || r?.winner) continue; // skip played
+      const upper = teeTime.toUpperCase().trim();
+      let dayOffset = null;
+      for (const [day, off] of Object.entries(DAY_OFFSET)) { if (upper.startsWith(day)) { dayOffset = off; break; } }
+      if (dayOffset === null) continue;
+      const weekStart = match.id === 'final' ? FIN_WEEK_START : SF_WEEK_START;
+      const date = new Date(weekStart); date.setDate(weekStart.getDate() + dayOffset);
+      if (date.toDateString() !== todayStr) continue;
+      const pA = getPlayerForTeamTier(match.teamA, tier) || match.teamA;
+      const pB = getPlayerForTeamTier(match.teamB, tier) || match.teamB;
+      const timeStr = teeTime.trim().replace(/^(MON|TUES?|WED|THURS?|FRI|SAT|SUN)\s*/i,'').trim() || 'TBD';
+      teeTimes.push({ timeStr, pA, pB, tier, round: match.round });
+    }
+    teeTimes.sort((a,b) => a.timeStr.localeCompare(b.timeStr));
+    teeTimes.forEach(e => lines.push(`  ${e.timeStr} — ${e.pA} vs ${e.pB} (T${e.tier} · ${e.round})`));
+  });
+  if (!lines.length) { showToast('No unplayed matches scheduled for today.'); return; }
+  const dateLabel = `${DAY_NAMES[today.getDay()]} ${MONTH_NAMES[today.getMonth()]} ${today.getDate()}`;
+  const text = `📅 Today's Playoff Schedule — ${dateLabel}\n\n${lines.join('\n')}`;
+  await sbInsert('announcements', { text, author: 'Commish' });
+  await loadAnnouncements(); renderLatestBanner();
+  document.getElementById('quick-post-status').textContent = `Schedule posted · ${new Date().toLocaleTimeString()}`;
+  showToast("Today's schedule posted to News ✓");
+}
+
+async function postRecentResults() {
+  const lastPostKey = 'mvgc_last_results_post';
+  const lastPostTime = parseInt(localStorage.getItem(lastPostKey) || '0');
+  const now = Date.now();
+
+  const allMatches = [
+    { id:'sf1', results:playoffState.sf1Results, teamA:playoffState.sf1?.teamA, teamB:playoffState.sf1?.teamB, round:'Semifinal 1' },
+    { id:'sf2', results:playoffState.sf2Results, teamA:playoffState.sf2?.teamA, teamB:playoffState.sf2?.teamB, round:'Semifinal 2' },
+    { id:'final', results:playoffState.finalResults, teamA:playoffState.finalTeamA, teamB:playoffState.finalTeamB, round:'Final' },
+  ];
+
+  // Get all played results from audit log since last post
+  const recentFromLog = resultLog.filter(r => {
+    const t = new Date(r.created_at).getTime();
+    return t > lastPostTime && (r.week === 'Playoff SF1' || r.week === 'Playoff SF2' || r.week === 'Playoff Final');
+  });
+
+  // Build lines from recent log entries, deduped by key
+  const seen = new Set();
+  const lines = [];
+  recentFromLog.forEach(r => {
+    const key = `${r.week}-T${r.tier}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    const winnerName = r.winner === 'home' ? r.home : r.winner === 'away' ? r.away : null;
+    const resultStr = r.result ? ` (${r.result})` : '';
+    const tierLabel = r.tier ? ` T${r.tier}` : '';
+    if (r.winner === 'halved') lines.push(`  ${tierLabel} ${r.home} vs ${r.away} — Halved${resultStr} · ${r.week}`);
+    else if (winnerName) { const loser = winnerName === r.home ? r.away : r.home; lines.push(`  ${tierLabel} ${winnerName} def. ${loser}${resultStr} · ${r.week}`); }
+  });
+
+  // Fallback: if no audit log entries, use all current results
+  if (!lines.length) {
+    allMatches.forEach(match => {
+      if (!match.teamA || !match.teamB) return;
+      for (let tier = 1; tier <= 10; tier++) {
+        const r = match.results[tier];
+        if (!r?.winner) continue;
+        const pA = getPlayerForTeamTier(match.teamA, tier) || match.teamA;
+        const pB = getPlayerForTeamTier(match.teamB, tier) || match.teamB;
+        const resultStr = r.result ? ` (${r.result})` : '';
+        if (r.winner === 'halved') lines.push(`  T${tier} ${pA} vs ${pB} — Halved${resultStr} · ${match.round}`);
+        else { const w = r.winner === 'home' ? pA : pB; const l = r.winner === 'home' ? pB : pA; lines.push(`  T${tier} ${w} def. ${l}${resultStr} · ${match.round}`); }
+      }
+    });
+  }
+
+  if (!lines.length) { showToast('No new playoff results since last post.'); return; }
+
+  const sf1pts = calcRoundPoints(playoffState.sf1Results);
+  const sf2pts = calcRoundPoints(playoffState.sf2Results);
+  let scoreStr = '';
+  if (playoffState.sf1?.teamA) scoreStr += `\n  ${playoffState.sf1.teamA} ${sf1pts.homeP} – ${sf1pts.awayP} ${playoffState.sf1.teamB}`;
+  if (playoffState.sf2?.teamA) scoreStr += `\n  ${playoffState.sf2.teamA} ${sf2pts.homeP} – ${sf2pts.awayP} ${playoffState.sf2.teamB}`;
+
+  const text = `📊 Playoff Results Update\n\n${lines.join('\n')}\n\nCurrent Scores:${scoreStr}`;
+  await sbInsert('announcements', { text, author: 'Commish' });
+  localStorage.setItem(lastPostKey, now.toString());
+  await loadAnnouncements(); renderLatestBanner();
+  const status = document.getElementById('quick-post-status');
+  if (status) status.textContent = `Results posted · ${new Date().toLocaleTimeString()}`;
+  showToast('Results posted to News ✓');
+}
+
 function renderTeamStandings() {
   if (!state.teams.length) {
     document.getElementById('team-standings-body').innerHTML =
@@ -4055,8 +4210,8 @@ function renderTierStandings() {
           <th>Player</th>
           <th style="font-size:9px">Team</th>
           <th class="num">Pts</th>
-          <th class="num" style="white-space:nowrap;min-width:70px;">W–L–T</th>
-          <th class="num" title="Net hole differential across all matches" style="font-size:9px;">+/-</th>
+          <th class="num" style="white-space:nowrap;min-width:65px;">W–L–T</th>
+          <th class="num" style="white-space:nowrap;min-width:36px;font-size:9px;">+/−</th>
         </tr></thead>
         <tbody>
           ${players.map((p,i) => {
@@ -4081,7 +4236,7 @@ function renderTierStandings() {
               <td style="font-size:12px;opacity:0.7;">${p.team.substring(0,12)}</td>
               <td class="num"><strong>${p.pts}</strong></td>
               <td class="num" style="white-space:nowrap;font-family:'Courier Prime',monospace;font-size:13px;">${p.w}–${p.l}–${p.t}</td>
-              <td class="num">${diffBadge}</td>
+              <td class="num" style="white-space:nowrap;min-width:36px;">${diffBadge}</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -4565,7 +4720,7 @@ function renderPlayoffSchedule() {
       if (!parsed) continue;
       const pA = getPlayerForTeamTier(match.teamA, tier) || match.teamA;
       const pB = getPlayerForTeamTier(match.teamB, tier) || match.teamB;
-      const result = r?.winner ? (r.winner === 'home' ? `${pA.split(' ').pop()} wins` : r.winner === 'away' ? `${pB.split(' ').pop()} wins` : 'Halved') : null;
+      const result = (r?.winner) ? (r.winner === 'home' ? `${pA.split(' ').pop()} wins` : r.winner === 'away' ? `${pB.split(' ').pop()} wins` : r.winner === 'halved' ? 'Halved' : null) : null;
       entries.push({ ...parsed, tier, round: match.round, pA, pB, teamA: match.teamA, teamB: match.teamB, result, matchId: match.id });
     }
   });
@@ -6659,7 +6814,7 @@ function showPage(id, btnEl) {
   if (id === 'pschedule') renderPlayoffSchedule();
   if (id === 'shame') renderShameWall();
   if (id === 'aces') renderAceWall();
-  if (id === 'playoffs') { renderPlayoffs(); renderLatestBanner(); renderSeasonStats(); }
+  if (id === 'playoffs') { renderPlayoffs(); renderLatestBanner(); renderSeasonStats(); showAdminQuickPost(); }
   if (id === 'admin') {
     if (adminAuthenticated) {
       showAdminContent();
