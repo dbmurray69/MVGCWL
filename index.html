@@ -2631,7 +2631,7 @@
         <span class="card-photo-hint">Tap to add photo</span>
       </div>
       <img class="card-photo" id="card-photo" src="" alt="" style="display:none"/>
-      <input type="file" class="card-photo-upload" id="card-photo-upload" accept="image/*" onchange="handlePhotoUpload(event)"/>
+      <input type="file" class="card-photo-upload" id="card-photo-upload" accept="image/*,image/heic,image/heif" onchange="handlePhotoUpload(event)"/>
       <span class="card-upload-badge" id="card-upload-badge">📷 Upload Photo</span>
     </div>
     <!-- Tier stripe -->
@@ -3758,13 +3758,21 @@ async function savePhotos() { /* handled per-photo by handlePhotoUpload */ }
 
 async function handlePhotoUpload(e) {
   const file = e.target.files[0];
-  if (!file) return;
+  if (!file) { showToast('No file selected'); return; }
   const playerName = e.target.dataset.player;
+  if (!playerName) { showToast('Error: no player selected'); return; }
+
   showToast('Uploading photo…');
 
+  // For HEIC files, change extension to jpg for compatibility
+  let uploadFile = file;
+  if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic')) {
+    uploadFile = new File([file], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+  }
+
   // Upload to Supabase Storage
-  const url = await sbUploadFile(file, 'players');
-  if (!url) { showToast('Upload failed — try again.'); return; }
+  const url = await sbUploadFile(uploadFile, 'players');
+  if (!url) { showToast('Upload failed — check connection and try again.'); return; }
 
   playerPhotos[playerName] = url;
 
@@ -3772,8 +3780,9 @@ async function handlePhotoUpload(e) {
   await sbUpsert('player_photos', { player_name: playerName, photo_data: url }, 'player_name');
 
   const photoEl = document.getElementById('card-photo');
-  document.getElementById('card-photo-placeholder').style.display = 'none';
-  photoEl.src = url; photoEl.style.display = 'block';
+  const placeholder = document.getElementById('card-photo-placeholder');
+  if (placeholder) placeholder.style.display = 'none';
+  if (photoEl) { photoEl.src = url; photoEl.style.display = 'block'; }
   showToast('Photo saved for ' + playerName + ' ✓');
   if (document.getElementById('page-roster')?.classList.contains('active')) renderRoster();
   renderShameWall();
