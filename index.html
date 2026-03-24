@@ -2596,16 +2596,32 @@ async function sbUpsert(table, row, onConflict) {
 // Upload a file to Supabase Storage and return its public URL
 async function sbUploadFile(file, folder) {
   try {
-    const ext = file.name ? file.name.split('.').pop() : (file.type.split('/')[1] || 'bin');
-    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const ext = file.name ? file.name.split('.').pop().toLowerCase() : (file.type.split('/')[1] || 'bin');
+    const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const path = `${folder}/${safeName}`;
+    console.log('Uploading to:', path, 'Type:', file.type, 'Size:', file.size);
     const r = await fetch(`${SB_URL}/storage/v1/object/media/${path}`, {
       method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': file.type || 'application/octet-stream' },
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': file.type || 'application/octet-stream',
+        'x-upsert': 'true'
+      },
       body: file
     });
-    if (!r.ok) { console.error('sbUploadFile failed:', r.status, await r.text()); return null; }
+    const responseText = await r.text();
+    console.log('Upload response:', r.status, responseText);
+    if (!r.ok) {
+      showToast('Upload failed: ' + r.status + ' — ' + responseText.substring(0, 80));
+      return null;
+    }
     return `${SB_URL}/storage/v1/object/public/media/${path}`;
-  } catch(e) { console.error('sbUploadFile error:', e); return null; }
+  } catch(e) {
+    console.error('sbUploadFile error:', e);
+    showToast('Upload error: ' + e.message);
+    return null;
+  }
 }
 
 // ═══════════════════════════════════════════════════════
