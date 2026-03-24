@@ -4033,7 +4033,6 @@ async function postRecentResults() {
   const postedKeys = new Set(JSON.parse(localStorage.getItem(postedKeysKey) || '[]'));
   const now = Date.now();
   const cutoff24h = now - (24 * 60 * 60 * 1000);
-
   const playoffRounds = ['Playoff SF1', 'Playoff SF2', 'Playoff Final'];
 
   // Dedup — keep most recent entry per matchup
@@ -4044,7 +4043,7 @@ async function postRecentResults() {
       deduped.set(key, r);
   });
 
-  // Include: results from last 24 hours + any older never-posted results
+  // Include last 24h results + any older never-posted results
   const toPost = [...deduped.values()].filter(r => {
     const key = `${r.week}-T${r.tier}`;
     const isRecent = new Date(r.ts).getTime() >= cutoff24h;
@@ -4061,51 +4060,43 @@ async function postRecentResults() {
     return rd !== 0 ? rd : (a.tier||0) - (b.tier||0);
   });
 
-  // Format each result on its own line
-  // Winner name / Team result
-  // over Loser name
-  // or "Halved" for ties
-  const resultLines = [];
-  toPost.forEach(r => {
-    const roundLabel = r.week.replace('Playoff ', '');
-    const resultStr = r.result || '';
-    const tierStr = `Tier ${r.tier}`;
-
-    // Look up player names for this tier
+  // One line per result
+  const resultLines = toPost.map(r => {
     const homeTeam = r.week === 'Playoff SF1' ? playoffState.sf1?.teamA
                    : r.week === 'Playoff SF2' ? playoffState.sf2?.teamA
                    : playoffState.finalTeamA;
     const awayTeam = r.week === 'Playoff SF1' ? playoffState.sf1?.teamB
                    : r.week === 'Playoff SF2' ? playoffState.sf2?.teamB
                    : playoffState.finalTeamB;
-    const homePlayer = getPlayerForTeamTier(homeTeam, r.tier) || r.home;
-    const awayPlayer = getPlayerForTeamTier(awayTeam, r.tier) || r.away;
+    const homePlayer = getPlayerForTeamTier(homeTeam, r.tier) || '?';
+    const awayPlayer = getPlayerForTeamTier(awayTeam, r.tier) || '?';
+    const score = r.result ? ` ${r.result}` : '';
+    const round = r.week.replace('Playoff ', '');
 
     if (r.winner === 'halved') {
-      resultLines.push(`${roundLabel} · ${tierStr}\n${homePlayer} (${r.home}) vs ${awayPlayer} (${r.away})\nHalved${resultStr ? ' ' + resultStr : ''}`);
+      return `${homePlayer} (${homeTeam}) vs ${awayPlayer} (${awayTeam}) — Halved${score} [${round} T${r.tier}]`;
     } else {
-      const winPlayer = r.winner === 'home' ? homePlayer : awayPlayer;
-      const winTeam   = r.winner === 'home' ? r.home : r.away;
+      const winPlayer  = r.winner === 'home' ? homePlayer : awayPlayer;
+      const winTeam    = r.winner === 'home' ? homeTeam   : awayTeam;
       const losePlayer = r.winner === 'home' ? awayPlayer : homePlayer;
-      const loseTeam   = r.winner === 'home' ? r.away : r.home;
-      resultLines.push(`${roundLabel} · ${tierStr}\n${winPlayer} (${winTeam}) def. ${losePlayer} (${loseTeam})${resultStr ? ' ' + resultStr : ''}`);
+      const loseTeam   = r.winner === 'home' ? awayTeam   : homeTeam;
+      return `${winPlayer} (${winTeam}) def. ${losePlayer} (${loseTeam})${score} [${round} T${r.tier}]`;
     }
   });
 
-  // Current scores
+  // Scores
   const sf1pts = calcRoundPoints(playoffState.sf1Results);
   const sf2pts = calcRoundPoints(playoffState.sf2Results);
   const sf1played = Object.values(playoffState.sf1Results).filter(r=>r&&r.winner).length;
   const sf2played = Object.values(playoffState.sf2Results).filter(r=>r&&r.winner).length;
-  let scoreLines = 'Current Scores';
+  let scoreLines = 'Scores:';
   if (playoffState.sf1?.teamA && sf1played > 0)
-    scoreLines += `\n${playoffState.sf1.teamA} ${sf1pts.homeP} – ${sf1pts.awayP} ${playoffState.sf1.teamB} (${sf1played}/10 played)`;
+    scoreLines += `\n${playoffState.sf1.teamA} ${sf1pts.homeP} – ${sf1pts.awayP} ${playoffState.sf1.teamB} (${sf1played}/10)`;
   if (playoffState.sf2?.teamA && sf2played > 0)
-    scoreLines += `\n${playoffState.sf2.teamA} ${sf2pts.homeP} – ${sf2pts.awayP} ${playoffState.sf2.teamB} (${sf2played}/10 played)`;
+    scoreLines += `\n${playoffState.sf2.teamA} ${sf2pts.homeP} – ${sf2pts.awayP} ${playoffState.sf2.teamB} (${sf2played}/10)`;
 
-  const text = `Playoff Results\n\n${resultLines.join('\n\n')}\n\n${scoreLines}`;
+  const text = `Playoff Results\n\n${resultLines.join('\n')}\n\n${scoreLines}`;
 
-  // Try insert with publishable key, fallback to anon
   let inserted = await sbInsert('announcements', { text, author: 'Commish' });
   if (!inserted) {
     const r2 = await fetch(`${SB_URL}/rest/v1/announcements`, {
@@ -4116,10 +4107,10 @@ async function postRecentResults() {
     if (!r2.ok) { showToast('Failed to post — database offline.'); return; }
   }
 
-  // Mark older results as posted (recent ones stay untracked so they re-post tomorrow)
+  // Mark older results as posted
   toPost.forEach(r => {
-    const key = `${r.week}-T${r.tier}`;
-    if (new Date(r.ts).getTime() < cutoff24h) postedKeys.add(key);
+    if (new Date(r.ts).getTime() < cutoff24h)
+      postedKeys.add(`${r.week}-T${r.tier}`);
   });
   localStorage.setItem(postedKeysKey, JSON.stringify([...postedKeys]));
 
@@ -4132,6 +4123,8 @@ async function postRecentResults() {
   if (status) status.textContent = `${toPost.length} result${toPost.length>1?'s':''} posted · ${new Date().toLocaleTimeString()}`;
   showToast(`${toPost.length} result${toPost.length>1?'s':''} posted to News`);
 }
+
+
 
 
 
