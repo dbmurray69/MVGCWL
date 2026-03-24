@@ -2633,7 +2633,8 @@
         <span class="card-photo-hint">Tap to add photo</span>
       </div>
       <img class="card-photo" id="card-photo" src="" alt="" style="display:none"/>
-      <input type="file" class="card-photo-upload" id="card-photo-upload" accept="image/*,image/heic,image/heif" onchange="handlePhotoUpload(event)"/>
+      <input type="file" id="card-photo-upload" accept="image/*,image/heic,image/heif" style="display:none" onchange="handlePhotoUpload(event)"/>
+      <button onclick="document.getElementById('card-photo-upload').click()" style="position:absolute;inset:0;width:100%;height:100%;background:transparent;border:none;cursor:pointer;z-index:5;"></button>
       <span class="card-upload-badge" id="card-upload-badge">📷 Upload Photo</span>
     </div>
     <!-- Tier stripe -->
