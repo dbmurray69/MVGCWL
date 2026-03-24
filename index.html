@@ -34,9 +34,10 @@
     color: var(--cream);
     min-height: 100vh;
     background-image:
-      radial-gradient(ellipse at 20% 50%, rgba(26,66,40,0.6) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 20%, rgba(42,96,64,0.4) 0%, transparent 50%),
-      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      radial-gradient(ellipse at 15% 40%, rgba(42,96,64,0.5) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 15%, rgba(26,66,40,0.6) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 90%, rgba(10,30,18,0.8) 0%, transparent 60%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.018'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 
   /* ── HEADER ── */
@@ -93,29 +94,33 @@
   .nav-btn {
     background: none; border: none; cursor: pointer;
     font-family: 'Courier Prime', monospace;
-    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
     color: var(--cream-dark);
     padding: 14px 20px;
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+    transition: all 0.18s;
     white-space: nowrap;
+    opacity: 0.75;
   }
-  .nav-btn:hover { color: var(--gold-light); }
-  .nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .nav-btn:hover { color: var(--gold-light); opacity: 1; }
+  .nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); opacity: 1; }
 
   /* ── MAIN ── */
-  main { max-width: 1200px; margin: 0 auto; padding: 32px 20px 60px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 36px 24px 80px; }
 
-  .page { display: none; }
+  .page { display: none; animation: pageIn 0.2s ease-out; }
   .page.active { display: block; }
+  @keyframes pageIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
   /* ── SECTION TITLES ── */
   .section-title {
     font-family: 'Playfair Display', serif;
     font-size: 32px; font-weight: 700;
     color: var(--gold);
-    border-bottom: 1px solid rgba(201,168,76,0.3);
-    padding-bottom: 12px; margin-bottom: 24px;
+    border-bottom: 1px solid rgba(201,168,76,0.25);
+    padding-bottom: 14px; margin-bottom: 28px;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 20px rgba(201,168,76,0.15);
   }
   .section-subtitle {
     font-family: 'EB Garamond', serif;
@@ -137,19 +142,21 @@
   .standings-table { width: 100%; border-collapse: collapse; }
   .standings-table th {
     font-family: 'Courier Prime', monospace;
-    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--gold); border-bottom: 1px solid rgba(201,168,76,0.4);
-    padding: 10px 12px; text-align: left;
+    font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--gold); border-bottom: 2px solid rgba(201,168,76,0.3);
+    padding: 12px 12px; text-align: left;
+    background: rgba(0,0,0,0.2);
   }
   .standings-table th.num { text-align: center; }
   .standings-table td {
-    padding: 11px 12px;
+    padding: 13px 12px;
     font-family: 'EB Garamond', serif; font-size: 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
     vertical-align: middle;
+    transition: background 0.12s;
   }
   .standings-table td.num { text-align: center; font-family: 'Courier Prime', monospace; font-size: 14px; }
-  .standings-table tr:hover td { background: rgba(201,168,76,0.06); }
+  .standings-table tr:hover td { background: rgba(201,168,76,0.05); }
   .standings-table tr.first td { color: var(--gold-light); }
   .rank-badge {
     display: inline-flex; align-items: center; justify-content: center;
@@ -260,12 +267,15 @@
   /* ── WALL OF SHAME ── */
   .shame-entry {
     display: flex; align-items: center; gap: 16px;
-    background: rgba(139,32,32,0.15);
-    border: 1px solid rgba(139,32,32,0.4);
+    background: linear-gradient(135deg, rgba(139,32,32,0.18), rgba(80,16,16,0.1));
+    border: 1px solid rgba(139,32,32,0.3);
     border-left: 4px solid var(--red);
-    padding: 14px 18px; margin-bottom: 10px;
-    border-radius: 0 4px 4px 0;
+    padding: 16px 20px; margin-bottom: 12px;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    transition: border-color 0.2s;
   }
+  .shame-entry:hover { border-color: rgba(180,60,60,0.5); }
   .shame-icon { font-size: 24px; }
   .shame-name { font-family: 'Playfair Display', serif; font-size: 18px; }
   .shame-detail { font-size: 14px; color: var(--cream-dark); opacity: 0.8; margin-top: 2px; }
@@ -277,12 +287,15 @@
   /* ── HOLE IN ONE ── */
   .ace-entry {
     display: flex; align-items: center; gap: 16px;
-    background: rgba(201,168,76,0.1);
-    border: 1px solid rgba(201,168,76,0.4);
+    background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(201,168,76,0.04));
+    border: 1px solid rgba(201,168,76,0.35);
     border-left: 4px solid var(--gold);
-    padding: 14px 18px; margin-bottom: 10px;
-    border-radius: 0 4px 4px 0;
+    padding: 16px 20px; margin-bottom: 12px;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 12px rgba(201,168,76,0.08);
+    transition: box-shadow 0.2s;
   }
+  .ace-entry:hover { box-shadow: 0 4px 20px rgba(201,168,76,0.15); }
   .ace-icon { font-size: 28px; }
   .ace-name { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold-light); }
   .ace-detail { font-size: 14px; color: var(--cream-dark); opacity: 0.8; margin-top: 2px; }
@@ -416,14 +429,15 @@
   }
   .league-stat-box {
     flex: 1; min-width: 120px;
-    background: rgba(13,40,24,0.6);
+    background: linear-gradient(145deg, rgba(16,50,28,0.7), rgba(8,28,16,0.8));
     border: 1px solid rgba(201,168,76,0.22);
-    border-radius: 6px;
+    border-radius: 10px;
     padding: 24px 16px 20px;
     text-align: center;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 3px 16px rgba(0,0,0,0.25);
   }
-  .league-stat-box:hover { border-color: rgba(201,168,76,0.5); }
+  .league-stat-box:hover { border-color: rgba(201,168,76,0.5); transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.35); }
   .league-stat-val {
     font-family: 'Playfair Display', serif;
     font-size: clamp(36px, 5vw, 56px);
@@ -434,13 +448,13 @@
   }
   .league-stat-lbl {
     font-family: 'Courier Prime', monospace;
-    font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
-    color: var(--cream-dark); opacity: 0.6;
+    font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--cream-dark); opacity: 0.55;
     margin-top: 10px;
   }
   @media (max-width: 600px) {
     .league-stats-row { gap: 8px; }
-    .league-stat-box { padding: 16px 10px 14px; min-width: 70px; }
+    .league-stat-box { padding: 16px 10px 14px; min-width: 70px; border-radius: 8px; }
     .league-stat-val { font-size: 30px; }
     .league-stat-lbl { font-size: 8px; letter-spacing: 2px; }
   }
@@ -632,151 +646,191 @@
   }
 
   .playoff-match-block {
-    background: rgba(26,66,40,0.4); border: 1px solid rgba(201,168,76,0.2);
-    border-radius: 6px; padding: 24px; margin-bottom: 28px;
+    background: linear-gradient(160deg, rgba(16,52,30,0.7), rgba(8,28,16,0.85));
+    border: 1px solid rgba(201,168,76,0.18);
+    border-radius: 14px; padding: 28px 24px; margin-bottom: 28px;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.35);
   }
   .playoff-final-block {
     border-color: var(--gold);
-    background: linear-gradient(135deg, rgba(201,168,76,0.1), rgba(26,66,40,0.5));
-    box-shadow: 0 0 30px rgba(201,168,76,0.1);
+    background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(26,66,40,0.6));
+    box-shadow: 0 0 40px rgba(201,168,76,0.12);
   }
   .playoff-round-label {
-    font-family: 'Courier Prime', monospace; font-size: 10px;
-    letter-spacing: 3px; text-transform: uppercase;
-    color: var(--gold); opacity: 0.8; margin-bottom: 8px;
+    font-family: 'Courier Prime', monospace; font-size: 9px;
+    letter-spacing: 4px; text-transform: uppercase;
+    color: var(--gold); opacity: 0.7; margin-bottom: 10px;
+    display: inline-block;
+    background: rgba(201,168,76,0.08);
+    padding: 4px 12px; border-radius: 20px;
+    border: 1px solid rgba(201,168,76,0.15);
   }
-  .playoff-round-final { opacity: 1; font-size: 11px; color: var(--gold-light); }
+  .playoff-round-final { opacity: 1; font-size: 10px; color: var(--gold-light); }
   .playoff-matchup-header {
-    font-family: 'Playfair Display', serif; font-size: 22px;
-    color: var(--white); margin-bottom: 20px; font-weight: 700;
+    font-family: 'Playfair Display', serif; font-size: 26px;
+    color: var(--white); margin-bottom: 6px; font-weight: 700;
+    line-height: 1.2;
   }
-  /* ── PLAYOFF ENTRY CARDS (POG) — mobile-first ── */
-  .playoff-tier-grid { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+  /* ══════════════════════════════════════════════
+     PLAYOFF ENTRY CARDS — polished mobile-first
+     ══════════════════════════════════════════════ */
+  .playoff-tier-grid { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
 
   .pog-card {
-    background: rgba(13,40,24,0.7);
-    border: 2px solid rgba(201,168,76,0.2);
-    border-radius: 10px;
-    padding: 16px;
-    transition: border-color 0.2s;
+    background: linear-gradient(135deg, rgba(13,42,26,0.85), rgba(8,28,18,0.9));
+    border: 1.5px solid rgba(201,168,76,0.18);
+    border-radius: 12px;
+    padding: 18px 16px 14px;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  .pog-card:hover { border-color: rgba(201,168,76,0.35); box-shadow: 0 4px 20px rgba(0,0,0,0.35); }
+
+  /* Tier badge + clear button row */
+  .pog-header-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
   }
   .pog-tier-badge {
     font-family: 'Courier Prime', monospace;
-    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--gold); opacity: 0.7; margin-bottom: 8px;
+    font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--gold); opacity: 0.6;
+    background: rgba(201,168,76,0.08);
+    padding: 3px 10px; border-radius: 20px;
+    border: 1px solid rgba(201,168,76,0.15);
   }
+
+  /* Player matchup line */
   .pog-matchup {
     font-family: 'Playfair Display', serif;
-    font-size: 17px; color: var(--cream);
-    margin-bottom: 14px; line-height: 1.4;
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    font-size: 18px; font-weight: 600;
+    color: var(--cream); line-height: 1.3;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   }
   .pog-vs {
     font-family: 'Courier Prime', monospace;
-    font-size: 10px; color: var(--cream-dark); opacity: 0.4;
+    font-size: 9px; color: var(--gold); opacity: 0.5;
+    letter-spacing: 2px; text-transform: uppercase;
+    background: rgba(201,168,76,0.08);
+    padding: 2px 7px; border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* Tee time */
+  .pog-time-input {
+    width: 100%; box-sizing: border-box;
+    background: rgba(201,168,76,0.05);
+    border: 1px dashed rgba(201,168,76,0.2);
+    border-radius: 6px;
+    color: var(--gold);
+    font-family: 'Courier Prime', monospace;
+    font-size: 12px; letter-spacing: 0.5px;
+    padding: 7px 12px;
+    margin: 10px 0;
+  }
+  .pog-time-input:focus { outline: none; border-style: solid; border-color: var(--gold); color: var(--cream); }
+  .pog-time-input::placeholder { opacity: 0.3; color: var(--cream-dark); }
+  .pog-tee-time-display {
+    font-family: 'Courier Prime', monospace;
+    font-size: 11px; color: var(--gold); opacity: 0.75;
+    margin: 6px 0; letter-spacing: 1px;
+    display: flex; align-items: center; gap: 6px;
   }
 
   /* Three winner buttons */
   .pog-winner-row {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr 80px 1fr;
     gap: 8px;
-    margin-bottom: 12px;
+    margin: 12px 0 10px;
   }
   .pog-btn {
-    padding: 12px 8px;
-    background: rgba(0,0,0,0.3);
-    border: 2px solid rgba(255,255,255,0.1);
+    padding: 13px 8px;
+    background: rgba(0,0,0,0.25);
+    border: 1.5px solid rgba(255,255,255,0.08);
     border-radius: 8px;
-    color: var(--cream);
+    color: var(--cream-dark);
     font-family: 'Courier Prime', monospace;
     font-size: 12px; letter-spacing: 0.5px;
     cursor: pointer;
     transition: all 0.15s;
     text-align: center;
-    min-height: 48px;
-    line-height: 1.3;
+    min-height: 52px;
+    line-height: 1.4;
     -webkit-tap-highlight-color: transparent;
+    word-break: break-word;
   }
-  .pog-btn:hover { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.08); }
-  .pog-btn:active { transform: scale(0.97); }
+  .pog-btn:hover {
+    border-color: rgba(201,168,76,0.4);
+    background: rgba(201,168,76,0.08);
+    color: var(--cream);
+  }
+  .pog-btn:active { transform: scale(0.96); }
   .pog-btn-active {
-    background: rgba(201,168,76,0.2) !important;
+    background: linear-gradient(135deg, rgba(201,168,76,0.25), rgba(201,168,76,0.1)) !important;
     border-color: var(--gold) !important;
     color: var(--gold) !important;
     font-weight: 700;
+    box-shadow: 0 0 12px rgba(201,168,76,0.15);
   }
-  /* Middle "Halved" button is narrower */
   .pog-winner-row .pog-btn:nth-child(2) {
-    padding: 12px 6px;
-    font-size: 10px;
-    border-color: rgba(255,255,255,0.08);
+    font-size: 10px; letter-spacing: 1px;
+    border-color: rgba(255,255,255,0.05);
+    color: var(--cream-dark); opacity: 0.8;
   }
 
-  /* Optional score input */
+  /* Score input */
   .pog-score-input {
     width: 100%; box-sizing: border-box;
-    background: rgba(0,0,0,0.2);
-    border: 1px solid rgba(201,168,76,0.15);
+    background: rgba(0,0,0,0.15);
+    border: 1px solid rgba(255,255,255,0.07);
     border-radius: 6px;
     color: var(--cream-dark);
     font-family: 'Courier Prime', monospace;
     font-size: 13px;
     padding: 10px 14px;
     min-height: 42px;
+    transition: border-color 0.15s;
   }
-  .pog-score-input:focus { outline: none; border-color: var(--gold); color: var(--cream); }
-  .pog-score-input::placeholder { opacity: 0.35; font-size: 12px; }
+  .pog-score-input:focus { outline: none; border-color: rgba(201,168,76,0.4); color: var(--cream); }
+  .pog-score-input::placeholder { opacity: 0.25; font-size: 11px; }
 
-  /* Readonly display */
+  /* Readonly result display */
   .pog-result-display {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-    margin-top: 4px;
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.05);
   }
   .pog-score-badge {
-    font-family: 'Courier Prime', monospace; font-size: 13px;
-    background: rgba(0,0,0,0.25); color: var(--cream-dark);
+    font-family: 'Courier Prime', monospace; font-size: 12px;
+    background: rgba(0,0,0,0.3); color: var(--cream-dark);
     padding: 4px 12px; border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.06);
   }
   .pog-winner-badge {
-    font-size: 15px; color: var(--gold-light); font-weight: 600;
+    font-family: 'Playfair Display', serif;
+    font-size: 15px; color: var(--gold-light); font-weight: 700;
   }
   .pog-no-result {
     font-family: 'Courier Prime', monospace;
-    font-size: 11px; color: var(--cream-dark); opacity: 0.35;
-    letter-spacing: 1px;
+    font-size: 10px; color: var(--cream-dark); opacity: 0.25;
+    letter-spacing: 2px; text-transform: uppercase;
   }
+
+  /* Clear button */
   .pog-clear-btn {
     background: none;
-    border: 1px solid rgba(139,32,32,0.5);
-    color: var(--red-light);
+    border: 1px solid rgba(180,60,60,0.35);
+    color: rgba(255,100,100,0.7);
     font-family: 'Courier Prime', monospace;
-    font-size: 10px; letter-spacing: 1px;
+    font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
     padding: 3px 10px; border-radius: 3px;
-    cursor: pointer; opacity: 0.7;
-    transition: opacity 0.15s;
+    cursor: pointer;
+    transition: all 0.15s;
     -webkit-tap-highlight-color: transparent;
   }
-  .pog-clear-btn:hover { opacity: 1; background: rgba(139,32,32,0.15); }
-
-  .pog-time-input {
-    width: 100%; box-sizing: border-box;
-    background: rgba(201,168,76,0.06);
-    border: 1px solid rgba(201,168,76,0.25);
-    border-radius: 6px;
-    color: var(--cream-dark);
-    font-family: 'Courier Prime', monospace;
-    font-size: 13px;
-    padding: 9px 14px;
-    margin-bottom: 10px;
-  }
-  .pog-time-input:focus { outline: none; border-color: var(--gold); color: var(--cream); }
-  .pog-time-input::placeholder { opacity: 0.35; }
-  .pog-tee-time-display {
-    font-family: 'Courier Prime', monospace;
-    font-size: 12px; color: var(--gold); opacity: 0.8;
-    margin-bottom: 6px; letter-spacing: 0.5px;
-  }
+  .pog-clear-btn:hover { border-color: rgba(255,80,80,0.6); color: rgba(255,120,120,0.9); background: rgba(180,40,40,0.12); }
 
   /* ── PLAYOFF SCHEDULE INPUT ── */
   .playoff-schedule-row { display:flex; align-items:center; gap:10px; margin:6px 0 14px; }
@@ -790,9 +844,11 @@
   .playoff-schedule-input::placeholder { opacity:0.4; }
 
   .playoff-summary {
-    margin-top: 16px; padding: 14px 18px;
-    background: rgba(0,0,0,0.2); border-radius: 6px;
+    margin-top: 20px; padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(0,0,0,0.3), rgba(13,42,26,0.4));
+    border-radius: 8px;
     border: 1px solid rgba(201,168,76,0.2);
+    border-left: 3px solid var(--gold);
     font-family: 'Playfair Display', serif; font-size: 18px;
   }
   .playoff-save-btn { margin-top: 16px; }
@@ -878,11 +934,12 @@
     gap: 20px;
   }
   .media-card {
-    background: rgba(13,40,24,0.6);
+    background: linear-gradient(145deg, rgba(16,50,28,0.7), rgba(8,28,16,0.8));
     border: 1px solid rgba(201,168,76,0.18);
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
-    transition: border-color 0.2s, transform 0.15s;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 3px 16px rgba(0,0,0,0.25);
     display: flex; flex-direction: column;
   }
   .media-card:hover { border-color: rgba(201,168,76,0.4); transform: translateY(-2px); }
@@ -1939,11 +1996,6 @@
     <div class="playoff-match-block" id="playoff-sf1-block">
       <div class="playoff-round-label">Semifinal 1</div>
       <div class="playoff-matchup-header" id="playoff-sf1-header">TBD vs TBD</div>
-      <div class="playoff-schedule-row" id="playoff-sf1-schedule">
-        <span class="playoff-schedule-icon">📅</span>
-        <input class="playoff-schedule-input" id="sf1-schedule-input" placeholder="Scheduled: Day · Time (e.g. Sat Mar 29 · 9:00 AM)"
-          oninput="savePlayoffSchedule('sf1')" />
-      </div>
       <div id="playoff-sf1-grid" class="playoff-tier-grid"></div>
       <div id="playoff-sf1-summary" class="playoff-summary"></div>
     </div>
@@ -1952,11 +2004,6 @@
     <div class="playoff-match-block" id="playoff-sf2-block">
       <div class="playoff-round-label">Semifinal 2</div>
       <div class="playoff-matchup-header" id="playoff-sf2-header">TBD vs TBD</div>
-      <div class="playoff-schedule-row" id="playoff-sf2-schedule">
-        <span class="playoff-schedule-icon">📅</span>
-        <input class="playoff-schedule-input" id="sf2-schedule-input" placeholder="Scheduled: Day · Time (e.g. Sat Mar 29 · 11:00 AM)"
-          oninput="savePlayoffSchedule('sf2')" />
-      </div>
       <div id="playoff-sf2-grid" class="playoff-tier-grid"></div>
       <div id="playoff-sf2-summary" class="playoff-summary"></div>
     </div>
@@ -1965,11 +2012,6 @@
     <div class="playoff-match-block playoff-final-block" id="playoff-final-block">
       <div class="playoff-round-label playoff-round-final">Championship Final</div>
       <div class="playoff-matchup-header" id="playoff-final-header">Winners TBD</div>
-      <div class="playoff-schedule-row" id="playoff-final-schedule">
-        <span class="playoff-schedule-icon">📅</span>
-        <input class="playoff-schedule-input" id="final-schedule-input" placeholder="Scheduled: Day · Time (e.g. Sat Apr 5 · 10:00 AM)"
-          oninput="savePlayoffSchedule('final')" />
-      </div>
       <div id="playoff-final-grid" class="playoff-tier-grid"></div>
       <div id="playoff-final-summary" class="playoff-summary"></div>
     </div>
@@ -4149,7 +4191,8 @@ const HISTORICAL_ACES = [
 // Key: "shame-{loser}-{idx}" or "ace-{player}-{idx}"
 let entryMedia = {};   // { key: { type:'image'|'video', src: dataURL } }
 
-function loadEntryMedia() {
+async function loadEntryMedia() {
+  // Load from localStorage (entry media keys reference Supabase Storage URLs)
   try { const s = localStorage.getItem('mvgc_entry_media'); if (s) entryMedia = JSON.parse(s); } catch(e) {}
 }
 function saveEntryMedia() {
@@ -4158,7 +4201,7 @@ function saveEntryMedia() {
 
 // Custom shame entries (admin-added, beyond auto-detected)
 let customShame = [];
-function loadCustomShame() {
+async function loadCustomShame() {
   try { const s = localStorage.getItem('mvgc_custom_shame'); if (s) customShame = JSON.parse(s); } catch(e) {}
 }
 function saveCustomShame() {
@@ -4540,9 +4583,9 @@ function buildPlayoffTierGrid(matchId, teamA, teamB, resultsObj, readonly) {
     } else {
       html += `
       <div class="pog-card" style="${cardBorder}" id="pog-card-${matchId}-${tier}">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <div class="pog-tier-badge" style="margin-bottom:0;">Tier ${tier}</div>
-          ${hasResult ? `<button class="pog-clear-btn" onclick="clearPlayoffResult('${matchId}',${tier})">✕ Clear</button>` : ''}
+        <div class="pog-header-row">
+          <div class="pog-tier-badge">Tier ${tier}</div>
+          ${hasResult ? `<button class="pog-clear-btn" onclick="clearPlayoffResult('${matchId}',${tier})">✕ CLEAR</button>` : ''}
         </div>
         <div class="pog-matchup">${pA} <span class="pog-vs">vs</span> ${pB}</div>
         <input class="pog-time-input" id="${matchId}-time-${tier}"
@@ -4564,7 +4607,7 @@ function buildPlayoffTierGrid(matchId, teamA, teamB, resultsObj, readonly) {
           </button>
         </div>
         <input class="pog-score-input" id="${matchId}-res-${tier}"
-          value="${resVal}"
+          value="${resVal && resVal !== 'undefined' ? resVal : ''}"
           placeholder="Score (optional: 3&2 · 1 up · Halved)"
           oninput="savePlayoffResult('${matchId}',${tier})" />
         <input type="hidden" id="${matchId}-win-${tier}" value="${winVal}" />
@@ -4576,8 +4619,12 @@ function buildPlayoffTierGrid(matchId, teamA, teamB, resultsObj, readonly) {
 
 async function setPlayoffWinner(matchId, tier, winner, pA, pB) {
   if (!canEditPlayoffMatch(matchId)) { showToast('Sign in to enter results.'); return; }
-  // Update hidden input
   const winEl = document.getElementById(`${matchId}-win-${tier}`);
+  // Toggle off if already selected
+  if (winEl && winEl.value === winner) {
+    await clearPlayoffResult(matchId, tier);
+    return;
+  }
   if (winEl) winEl.value = winner;
   // Auto-fill score if blank
   const resEl = document.getElementById(`${matchId}-res-${tier}`);
@@ -4731,14 +4778,14 @@ async function renderFinalMatchup() {
   const myMatchBadge = isMyMatch
     ? `<span style="font-family:'Courier Prime',monospace;font-size:9px;background:rgba(0,200,80,0.15);color:#00e060;border:1px solid #00c050;padding:2px 8px;border-radius:2px;margin-left:8px;letter-spacing:1px;">YOUR MATCH</span>`
     : '';
-  document.getElementById('playoff-final-header').innerHTML = `${fA} vs ${fB}${myMatchBadge}`;
+  document.getElementById('playoff-final-header').innerHTML = `${fA} vs ${fB}${myMatchBadge}${canEdit ? `<button onclick="saveAllPlayoffResults('final')" style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.5);color:var(--gold);padding:5px 14px;border-radius:20px;cursor:pointer;transition:all 0.15s;margin-left:12px;vertical-align:middle;">Save ✓</button>` : ''}`;
   const lockNote = !canEdit
     ? `<div style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.08);border-radius:3px;padding:8px 14px;margin-bottom:10px;">
          <span>🔒</span><span style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--cream-dark);opacity:0.6;">${captainAuthenticated ? 'You can only enter results for ' + team + ' matches' : 'Sign in as a captain or admin to enter results'}</span>
        </div>`
     : '';
   const saveBtn = canEdit
-    ? `<div class="playoff-save-btn"><button class="btn btn-gold" onclick="saveAllPlayoffResults('final')">Save Final Results ✓</button></div>`
+    ? `<div class="playoff-save-btn"><button class="btn btn-outline" style="font-size:10px;padding:7px 16px;" onclick="saveAllPlayoffResults('final')">Save All ✓</button></div>`
     : '';
   document.getElementById('playoff-final-grid').innerHTML =
     lockNote +
@@ -4934,15 +4981,27 @@ async function renderPlayoffs() {
          </div>`
       : '';
     const saveBtn = canEdit
-      ? `<div class="playoff-save-btn"><button class="btn btn-gold" onclick="saveAllPlayoffResults('${matchId}')">Save Results ✓</button></div>`
+      ? `<div class="playoff-save-btn"><button class="btn btn-outline" style="font-size:10px;padding:7px 16px;" onclick="saveAllPlayoffResults('${matchId}')">Save All ✓</button></div>`
       : '';
-    return { canEdit, myMatchBadge, lockNote, saveBtn };
+    const saveBtnHeader = canEdit
+      ? `<button onclick="saveAllPlayoffResults('${matchId}')" style="
+          font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+          background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.5);
+          color:var(--gold);padding:5px 14px;border-radius:20px;cursor:pointer;
+          transition:all 0.15s;margin-left:12px;vertical-align:middle;
+          -webkit-tap-highlight-color:transparent;"
+          onmouseover="this.style.background='rgba(201,168,76,0.25)'"
+          onmouseout="this.style.background='rgba(201,168,76,0.15)'">
+          Save ✓
+        </button>`
+      : '';
+    return { canEdit, myMatchBadge, lockNote, saveBtn, saveBtnHeader };
   }
 
   // SF1
   if (sf1.teamA && sf1.teamB) {
-    const { canEdit, myMatchBadge, lockNote, saveBtn } = matchControls('sf1', sf1.teamA, sf1.teamB);
-    document.getElementById('playoff-sf1-header').innerHTML = `${sf1.teamA} vs ${sf1.teamB}${myMatchBadge}`;
+    const { canEdit, myMatchBadge, lockNote, saveBtn, saveBtnHeader } = matchControls('sf1', sf1.teamA, sf1.teamB);
+    document.getElementById('playoff-sf1-header').innerHTML = `${sf1.teamA} vs ${sf1.teamB}${myMatchBadge}${saveBtnHeader}`;
     document.getElementById('playoff-sf1-grid').innerHTML =
       lockNote +
       buildPlayoffTierGrid('sf1', sf1.teamA, sf1.teamB, playoffState.sf1Results, !canEdit) +
@@ -4955,8 +5014,8 @@ async function renderPlayoffs() {
 
   // SF2
   if (sf2.teamA && sf2.teamB) {
-    const { canEdit, myMatchBadge, lockNote, saveBtn } = matchControls('sf2', sf2.teamA, sf2.teamB);
-    document.getElementById('playoff-sf2-header').innerHTML = `${sf2.teamA} vs ${sf2.teamB}${myMatchBadge}`;
+    const { canEdit, myMatchBadge, lockNote, saveBtn, saveBtnHeader } = matchControls('sf2', sf2.teamA, sf2.teamB);
+    document.getElementById('playoff-sf2-header').innerHTML = `${sf2.teamA} vs ${sf2.teamB}${myMatchBadge}${saveBtnHeader}`;
     document.getElementById('playoff-sf2-grid').innerHTML =
       lockNote +
       buildPlayoffTierGrid('sf2', sf2.teamA, sf2.teamB, playoffState.sf2Results, !canEdit) +
@@ -6175,12 +6234,14 @@ function renderAll() {
   setInterval(async () => {
     await loadAnnouncements();
     await loadMediaPosts();
-    // Refresh result log and audit if those pages are visible
+    await loadPlayoffState();
     const activePage = document.querySelector('.page.active');
     if (activePage) {
       const id = activePage.id;
       if (id === 'page-match-results') renderMatchResults();
       if (id === 'page-audit') showAuditContent();
+      if (id === 'page-playoffs') { renderPlayoffs(); renderPlayoffStats(); }
+      if (id === 'page-standings') { renderTeamStandings(); renderPlayoffStats(); }
     }
   }, 30000); // every 30 seconds
 
