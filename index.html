@@ -868,6 +868,86 @@
   .champion-trophy { font-size: 64px; margin-bottom: 12px; }
   .champion-label { font-family:'Courier Prime',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); opacity:0.8; margin-bottom:8px; }
   .champion-name { font-family:'Playfair Display',serif; font-size:42px; font-weight:900; color:var(--gold-light); }
+  /* ── PLAYOFF SCHEDULE PAGE ── */
+  .pschedule-day-block {
+    margin-bottom: 32px;
+  }
+  .pschedule-day-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    border-bottom: 2px solid rgba(201,168,76,0.3);
+    padding-bottom: 10px; margin-bottom: 14px;
+  }
+  .pschedule-date {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700; color: var(--gold);
+  }
+  .pschedule-week-label {
+    font-family: 'Courier Prime', monospace;
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--cream-dark); opacity: 0.5;
+  }
+  .pschedule-matches { display: flex; flex-direction: column; gap: 10px; }
+  .pschedule-match-row {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 12px; align-items: center;
+    background: linear-gradient(135deg, rgba(16,50,28,0.6), rgba(8,28,16,0.7));
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 10px; padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+  .pschedule-match-row:hover { border-color: rgba(201,168,76,0.3); }
+  .pschedule-time {
+    font-family: 'Courier Prime', monospace;
+    font-size: 16px; font-weight: 700;
+    color: var(--gold); text-align: center;
+    border-right: 1px solid rgba(201,168,76,0.15);
+    padding-right: 12px;
+  }
+  .pschedule-tbd {
+    font-size: 13px; font-weight: 400;
+    color: var(--cream-dark); opacity: 0.45;
+    font-style: italic;
+  }
+  .pschedule-round-tag {
+    font-family: 'Courier Prime', monospace;
+    font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--cream-dark); opacity: 0.5; margin-bottom: 6px;
+  }
+  .pschedule-players {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; color: var(--cream);
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .pschedule-vs {
+    font-family: 'Courier Prime', monospace;
+    font-size: 9px; color: var(--gold); opacity: 0.4;
+    letter-spacing: 1px;
+  }
+  .pschedule-teams {
+    font-family: 'Courier Prime', monospace;
+    font-size: 10px; color: var(--cream-dark); opacity: 0.45;
+    margin-top: 4px; letter-spacing: 0.5px;
+  }
+  .pschedule-result-col { text-align: right; }
+  .pschedule-result {
+    font-family: 'Courier Prime', monospace; font-size: 11px;
+    background: rgba(0,180,80,0.15); color: #00e060;
+    border: 1px solid rgba(0,180,80,0.3);
+    padding: 4px 10px; border-radius: 20px;
+    white-space: nowrap;
+  }
+  .pschedule-pending {
+    background: rgba(201,168,76,0.08); color: var(--cream-dark);
+    border-color: rgba(201,168,76,0.15); opacity: 0.6;
+  }
+  @media (max-width: 600px) {
+    .pschedule-match-row { grid-template-columns: 70px 1fr; grid-template-rows: auto auto; }
+    .pschedule-result-col { grid-column: 2; margin-top: -4px; }
+    .pschedule-time { border-right: none; border-bottom: 1px solid rgba(201,168,76,0.1); padding-bottom: 8px; padding-right: 0; grid-row: 1; }
+    .pschedule-players { font-size: 14px; }
+  }
+
   /* ── ANNOUNCEMENT BANNER ── */
   .announcement-banner {
     background: linear-gradient(135deg, rgba(201,168,76,0.18), rgba(26,66,40,0.5));
@@ -1396,6 +1476,43 @@
   }
   .card-contact-link:hover { color: var(--green-deep); text-decoration: underline; }
 
+  /* Match log in player card */
+  .card-match-log {
+    padding: 0 16px 14px;
+    border-top: 1px solid rgba(13,40,24,0.15);
+    margin-top: 4px;
+  }
+  .card-match-log-title {
+    font-family: 'Courier Prime', monospace;
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--green-muted); margin: 12px 0 8px;
+  }
+  .card-match-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto auto;
+    gap: 6px; align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(13,40,24,0.08);
+    font-size: 12px;
+  }
+  .card-match-row:last-child { border-bottom: none; }
+  .card-match-week {
+    font-family: 'Courier Prime', monospace; font-size: 10px;
+    color: var(--green-muted); text-align: center;
+  }
+  .card-match-opp { color: var(--green-deep); font-size: 13px; }
+  .card-match-score {
+    font-family: 'Courier Prime', monospace; font-size: 11px;
+    color: var(--green-muted); text-align: right;
+  }
+  .card-match-result {
+    font-family: 'Courier Prime', monospace; font-size: 11px;
+    font-weight: 700; text-align: right; min-width: 32px;
+  }
+  .card-match-result.win { color: #3d9970; }
+  .card-match-result.loss { color: #c0392b; }
+  .card-match-result.tie { color: var(--green-muted); }
+
   /* Bottom band */
   .card-bottom-band {
     background: var(--green-deep);
@@ -1622,6 +1739,7 @@
   <button class="nav-btn nav-more-item" onclick="showPage('schedule',this)"><span class="nav-icon">📅</span><span>Schedule</span></button>
   <button class="nav-btn nav-more-item" onclick="showPage('results',this)"><span class="nav-icon">✏️</span><span>Enter Results</span></button>
   <button class="nav-btn nav-more-item" onclick="showPage('roster',this)"><span class="nav-icon">👥</span><span>Roster</span></button>
+  <button class="nav-btn nav-more-item" onclick="showPage('pschedule',this)"><span class="nav-icon">📆</span><span>PO Schedule</span></button>
   <button class="nav-btn nav-more-item" onclick="showPage('shame',this)"><span class="nav-icon">💀</span><span>Shame</span></button>
   <button class="nav-btn nav-more-item" onclick="showPage('aces',this)"><span class="nav-icon">⛳</span><span>Aces</span></button>
   <button class="nav-btn nav-more-item" onclick="showPage('media',this)"><span class="nav-icon">📸</span><span>Media</span></button>
@@ -1638,6 +1756,7 @@
     <button class="more-menu-btn" onclick="showPage('schedule',this);closeMoreMenu()"><span style="font-size:20px;">📅</span><span>Schedule</span></button>
     <button class="more-menu-btn" onclick="showPage('results',this);closeMoreMenu()"><span style="font-size:20px;">✏️</span><span>Enter Results</span></button>
     <button class="more-menu-btn" onclick="showPage('roster',this);closeMoreMenu()"><span style="font-size:20px;">👥</span><span>Roster</span></button>
+    <button class="more-menu-btn" onclick="showPage('pschedule',this);closeMoreMenu()"><span style="font-size:20px;">📆</span><span>Playoff Schedule</span></button>
     <button class="more-menu-btn" onclick="showPage('shame',this);closeMoreMenu()"><span style="font-size:20px;">💀</span><span>Wall of Shame</span></button>
     <button class="more-menu-btn" onclick="showPage('aces',this);closeMoreMenu()"><span style="font-size:20px;">⛳</span><span>Hole-in-One</span></button>
     <button class="more-menu-btn" onclick="showPage('media',this);closeMoreMenu()"><span style="font-size:20px;">📸</span><span>Media Wall</span></button>
@@ -2024,6 +2143,13 @@
     </div>
   </div>
 
+  <!-- PLAYOFF SCHEDULE -->
+  <div id="page-pschedule" class="page">
+    <h2 class="section-title">Playoff Schedule 📆</h2>
+    <div class="section-subtitle">All matches listed in chronological order</div>
+    <div id="pschedule-content"></div>
+  </div>
+
   <!-- WALL OF SHAME -->
   <div id="page-shame" class="page">
     <h2 class="section-title">Wall of Shame 💀</h2>
@@ -2233,6 +2359,17 @@
     <!-- ANNOUNCEMENTS ADMIN PANEL -->
     <div id="setup-announcements" class="setup-panel" style="display:none">
       <h3 style="font-family:'Playfair Display',serif;color:var(--gold);margin-bottom:16px;font-size:20px;">Post Announcement</h3>
+
+      <!-- Today's Matches quick-post -->
+      <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:8px;padding:16px 18px;margin-bottom:24px;max-width:700px;">
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">📅 Quick Post — Today's Matches</div>
+        <div style="font-family:'EB Garamond',serif;font-size:14px;color:var(--cream-dark);margin-bottom:14px;opacity:0.8;">Auto-generates and posts an announcement listing all playoff matches scheduled for today.</div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-gold" onclick="postTodaysMatches()" style="font-size:11px;">☀️ Post Today's Matches</button>
+          <span id="todays-matches-preview" style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--cream-dark);opacity:0.6;"></span>
+        </div>
+      </div>
+
       <div class="form-group" style="max-width:700px;">
         <label class="form-label">Announcement</label>
         <textarea class="form-input" id="announcement-text" rows="3"
@@ -2510,6 +2647,8 @@
     </div>
     <!-- Contact -->
     <div class="card-contact" id="card-contact"></div>
+    <!-- Match Log -->
+    <div class="card-match-log" id="card-match-log"></div>
     <!-- Bottom band -->
     <div class="card-bottom-band">
       <span class="card-mvgc">Mill Valley Golf Club</span>
@@ -2523,7 +2662,7 @@
 //  SUPABASE — Shared cloud database
 // ═══════════════════════════════════════════════════════
 const SB_URL = 'https://gximoajdzjhngwmbtkke.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aW1vYWpkempobmd3bWJ0a2tlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDYxMjcsImV4cCI6MjA4OTg4MjEyN30.HV5zCNwIl2hAZS4vt2lBFC3ItsDq7AZW0VOorVZJ2tY';
+const SB_KEY = 'sb_publishable_lxCDLzV3Htgbl_f-f8WLlQ_dpACUXYb';
 const SB_HDR = { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
 
 let sbConnected = false; // tracks whether DB is reachable
@@ -3709,6 +3848,47 @@ function openPlayerCard(name) {
   if (!p.cell && !p.email) contactHTML = `<div class="card-contact-row" style="opacity:0.5;font-style:italic;font-size:13px;">No contact info on file</div>`;
   document.getElementById('card-contact').innerHTML = contactHTML;
 
+  // Match log — all weeks played, opponent, result, score
+  const matchLog = [];
+  state.schedule.forEach(week => {
+    week.matchups.forEach(m => {
+      const isHome = m.home === p.team;
+      const isAway = m.away === p.team;
+      if (!isHome && !isAway) return;
+      const key = `${week.week}-${m.home}-${m.away}-${p.tier}`;
+      const res = state.results[key];
+      if (!res) return;
+      const oppTeam = isHome ? m.away : m.home;
+      const oppName = getPlayerForTeamTier(oppTeam, p.tier) || oppTeam;
+      let resultClass, resultLabel;
+      if (res.winner === 'home' && isHome || res.winner === 'away' && isAway) {
+        resultClass = 'win'; resultLabel = 'W';
+      } else if (res.winner === 'halved') {
+        resultClass = 'tie'; resultLabel = 'H';
+      } else {
+        resultClass = 'loss'; resultLabel = 'L';
+      }
+      matchLog.push({ week: week.week, opp: oppName, result: res.result || '', resultClass, resultLabel });
+    });
+  });
+
+  const matchLogEl = document.getElementById('card-match-log');
+  if (matchLog.length) {
+    const safe = (n) => (n||'').replace(/'/g,"\\'");
+    matchLogEl.innerHTML = `
+      <div class="card-match-log-title">Season Results</div>
+      ${matchLog.map(m => `
+        <div class="card-match-row">
+          <div class="card-match-week">Wk ${m.week}</div>
+          <div class="card-match-opp"><span class="player-link" onclick="openPlayerCard('${safe(m.opp)}')">${m.opp}</span></div>
+          <div class="card-match-score">${m.result}</div>
+          <div class="card-match-result ${m.resultClass}">${m.resultLabel}</div>
+        </div>`).join('')}
+    `;
+  } else {
+    matchLogEl.innerHTML = '';
+  }
+
   document.getElementById('player-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -3795,11 +3975,42 @@ function renderTierStandings() {
   const grid = document.getElementById('tier-standings-grid');
   grid.innerHTML = '';
 
+  // Build head-to-head lookup: h2h[playerA][playerB] = 'win'|'loss'|'tie'
+  function buildH2H(tier) {
+    const h2h = {};
+    state.schedule.forEach(week => {
+      week.matchups.forEach(m => {
+        const hp = getPlayerForTeamTier(m.home, tier);
+        const ap = getPlayerForTeamTier(m.away, tier);
+        if (!hp || !ap) return;
+        const key = `${week.week}-${m.home}-${m.away}-${tier}`;
+        const res = state.results[key];
+        if (!res) return;
+        if (!h2h[hp]) h2h[hp] = {};
+        if (!h2h[ap]) h2h[ap] = {};
+        if (res.winner === 'home') {
+          h2h[hp][ap] = (h2h[hp][ap] || 0) + 1;
+          h2h[ap][hp] = (h2h[ap][hp] || 0) - 1;
+        } else if (res.winner === 'away') {
+          h2h[ap][hp] = (h2h[ap][hp] || 0) + 1;
+          h2h[hp][ap] = (h2h[hp][ap] || 0) - 1;
+        }
+        // halved = 0, no change
+      });
+    });
+    return h2h;
+  }
+
   for (let tier = 1; tier <= 10; tier++) {
-    const players = Object.values(tierData[tier]).sort((a,b) => {
+    const h2h = buildH2H(tier);
+    const players = Object.values(tierData[tier]).sort((a, b) => {
+      // 1. Points
       if (b.pts !== a.pts) return b.pts - a.pts;
-      if (b.w !== a.w) return b.w - a.w;
-      return b.diff - a.diff; // hole differential as final tiebreaker
+      // 2. Head-to-head record
+      const h2hScore = (h2h[b.name]?.[a.name] || 0) - (h2h[a.name]?.[b.name] || 0);
+      if (h2hScore !== 0) return h2hScore;
+      // 3. Hole differential
+      return b.diff - a.diff;
     });
     const card = document.createElement('div');
     card.className = 'card';
@@ -4252,6 +4463,138 @@ function openMediaLightbox(src) {
   }
   lb.innerHTML = `<img src="${src}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:4px;box-shadow:0 0 60px rgba(0,0,0,0.8);" />`;
   document.body.appendChild(lb);
+}
+
+function renderPlayoffSchedule() {
+  const el = document.getElementById('pschedule-content');
+  if (!el) return;
+
+  // Date mapping: day name → actual date
+  // Semis: Mon Mar 24 – Sun Mar 30 (yesterday was Mar 23, so week started Mar 23)
+  // Finals: Mon Mar 31 – Sun Apr 6
+  const SF_WEEK_START  = new Date(2026, 2, 23); // Mon Mar 23
+  const FIN_WEEK_START = new Date(2026, 2, 31); // Mon Mar 31
+
+  const DAY_OFFSET = { 'MON':0,'TUES':1,'TUE':1,'WED':2,'THUR':3,'THU':3,'FRI':4,'SAT':5,'SUN':6 };
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  function parseEntry(teeTime, matchId) {
+    if (!teeTime || !teeTime.trim()) return null;
+    const upper = teeTime.toUpperCase().trim();
+    const weekStart = matchId === 'final' ? FIN_WEEK_START : SF_WEEK_START;
+
+    // Extract day
+    let dayOffset = null;
+    for (const [day, off] of Object.entries(DAY_OFFSET)) {
+      if (upper.startsWith(day)) { dayOffset = off; break; }
+    }
+    if (dayOffset === null) return null;
+
+    // Extract time part (everything after the day name)
+    const timeStr = teeTime.trim().replace(/^(MON|TUES?|WED|THURS?|FRI|SAT|SUN)\s*/i, '').trim();
+
+    // Build actual date
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + dayOffset);
+
+    // Parse time for sorting (convert to minutes)
+    let sortMinutes = 0;
+    const timeMatch = timeStr.match(/(\d+)(?::(\d+))?\s*(AM|PM)?/i);
+    if (timeMatch) {
+      let hours = parseInt(timeMatch[1]);
+      const mins = parseInt(timeMatch[2] || '0');
+      const ampm = (timeMatch[3] || '').toUpperCase();
+      if (ampm === 'PM' && hours < 12) hours += 12;
+      if (ampm === 'AM' && hours === 12) hours = 0;
+      sortMinutes = hours * 60 + mins;
+    }
+
+    const dateLabel = `${DAY_NAMES[date.getDay()]} ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
+    const displayTime = timeStr || 'TBD';
+    // Put TBD entries at end of day (sort minutes = 9999)
+    const finalSortMinutes = timeStr ? sortMinutes : 9999;
+    return { date, sortKey: date.getTime() + finalSortMinutes, dateLabel, timeStr: displayTime, dayOffset };
+  }
+
+  // Collect all entries from sf1, sf2, final
+  const entries = [];
+  const matches = [
+    { id: 'sf1', results: playoffState.sf1Results, teamA: playoffState.sf1?.teamA, teamB: playoffState.sf1?.teamB, round: 'Semifinal 1' },
+    { id: 'sf2', results: playoffState.sf2Results, teamA: playoffState.sf2?.teamA, teamB: playoffState.sf2?.teamB, round: 'Semifinal 2' },
+    { id: 'final', results: playoffState.finalResults, teamA: playoffState.finalTeamA, teamB: playoffState.finalTeamB, round: 'Championship Final' },
+  ];
+
+  matches.forEach(match => {
+    if (!match.teamA || !match.teamB) return;
+    for (let tier = 1; tier <= 10; tier++) {
+      const r = match.results[tier];
+      const teeTime = r?.teeTime;
+      if (!teeTime) continue;
+      const parsed = parseEntry(teeTime, match.id);
+      if (!parsed) continue;
+      const pA = getPlayerForTeamTier(match.teamA, tier) || match.teamA;
+      const pB = getPlayerForTeamTier(match.teamB, tier) || match.teamB;
+      const result = r?.winner ? (r.winner === 'home' ? `${pA.split(' ').pop()} wins` : r.winner === 'away' ? `${pB.split(' ').pop()} wins` : 'Halved') : null;
+      entries.push({ ...parsed, tier, round: match.round, pA, pB, teamA: match.teamA, teamB: match.teamB, result, matchId: match.id });
+    }
+  });
+
+  if (!entries.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:40px 0;">No tee times have been scheduled yet. Add tee times on the Playoffs page.</div>`;
+    return;
+  }
+
+  // Sort by date+time
+  entries.sort((a, b) => a.sortKey - b.sortKey);
+
+  // Group by date
+  const byDate = {};
+  entries.forEach(e => {
+    if (!byDate[e.dateLabel]) byDate[e.dateLabel] = [];
+    byDate[e.dateLabel].push(e);
+  });
+
+  // Render
+  let html = '';
+  for (const [dateLabel, dayEntries] of Object.entries(byDate)) {
+    // Determine week label
+    const isFinals = dayEntries[0].matchId === 'final';
+    const weekLabel = isFinals ? 'Championship Final Week' : 'Semifinal Week';
+    html += `
+      <div class="pschedule-day-block">
+        <div class="pschedule-day-header">
+          <div class="pschedule-date">${dateLabel}</div>
+          <div class="pschedule-week-label">${weekLabel}</div>
+        </div>
+        <div class="pschedule-matches">`;
+
+    dayEntries.forEach(e => {
+      const safeA = e.pA.replace(/'/g, "\\'");
+      const safeB = e.pB.replace(/'/g, "\\'");
+      const resultBadge = e.result
+        ? `<span class="pschedule-result">${e.result}</span>`
+        : `<span class="pschedule-result pschedule-pending">Pending</span>`;
+      html += `
+          <div class="pschedule-match-row">
+            <div class="pschedule-time${e.timeStr === 'TBD' ? ' pschedule-tbd' : ''}">${e.timeStr}</div>
+            <div class="pschedule-matchup">
+              <div class="pschedule-round-tag">${e.round} · T${e.tier}</div>
+              <div class="pschedule-players">
+                <span class="player-link" onclick="openPlayerCard('${safeA}')">${e.pA}</span>
+                <span class="pschedule-vs">vs</span>
+                <span class="player-link" onclick="openPlayerCard('${safeB}')">${e.pB}</span>
+              </div>
+              <div class="pschedule-teams">${e.teamA} vs ${e.teamB}</div>
+            </div>
+            <div class="pschedule-result-col">${resultBadge}</div>
+          </div>`;
+    });
+
+    html += `</div></div>`;
+  }
+
+  el.innerHTML = html;
 }
 
 function renderShameWall() {
@@ -5095,6 +5438,96 @@ function formatTS(isoStr) {
       hour:'numeric', minute:'2-digit', hour12:true
     });
   } catch(e) { return isoStr; }
+}
+
+async function postTodaysMatches() {
+  // Get today's date in Pacific time
+  const now = new Date();
+  const pacificStr = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
+  const pacific = new Date(pacificStr);
+  const todayDay = pacific.getDay(); // 0=Sun,1=Mon,...6=Sat
+  const todayDate = pacific.getDate();
+  const todayMonth = pacific.getMonth();
+
+  const SF_WEEK_START  = new Date(2026, 2, 23); // Mon Mar 23
+  const FIN_WEEK_START = new Date(2026, 2, 31); // Mon Mar 31
+  const DAY_OFFSET = { 'MON':0,'TUES':1,'TUE':1,'WED':2,'THUR':3,'THU':3,'FRI':4,'SAT':5,'SUN':6 };
+  const DAY_NAMES_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function getMatchDate(teeTime, matchId) {
+    if (!teeTime) return null;
+    const upper = teeTime.toUpperCase().trim();
+    const weekStart = matchId === 'final' ? FIN_WEEK_START : SF_WEEK_START;
+    let dayOffset = null;
+    for (const [day, off] of Object.entries(DAY_OFFSET)) {
+      if (upper.startsWith(day)) { dayOffset = off; break; }
+    }
+    if (dayOffset === null) return null;
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + dayOffset);
+    return d;
+  }
+
+  // Collect today's matches
+  const todayMatches = [];
+  const matches = [
+    { id: 'sf1', results: playoffState.sf1Results, teamA: playoffState.sf1?.teamA, teamB: playoffState.sf1?.teamB, round: 'SF1' },
+    { id: 'sf2', results: playoffState.sf2Results, teamA: playoffState.sf2?.teamA, teamB: playoffState.sf2?.teamB, round: 'SF2' },
+    { id: 'final', results: playoffState.finalResults, teamA: playoffState.finalTeamA, teamB: playoffState.finalTeamB, round: 'Final' },
+  ];
+
+  matches.forEach(match => {
+    if (!match.teamA || !match.teamB) return;
+    for (let tier = 1; tier <= 10; tier++) {
+      const r = match.results[tier];
+      const teeTime = r?.teeTime;
+      if (!teeTime) continue;
+      const d = getMatchDate(teeTime, match.id);
+      if (!d) continue;
+      if (d.getDate() !== todayDate || d.getMonth() !== todayMonth) continue;
+      const pA = getPlayerForTeamTier(match.teamA, tier) || match.teamA;
+      const pB = getPlayerForTeamTier(match.teamB, tier) || match.teamB;
+      const timeStr = teeTime.trim().replace(/^(MON|TUES?|WED|THURS?|FRI|SAT|SUN)\s*/i, '').trim();
+      todayMatches.push({ tier, round: match.round, pA, pB, timeStr: timeStr || 'TBD', teamA: match.teamA, teamB: match.teamB });
+    }
+  });
+
+  if (!todayMatches.length) {
+    showToast('No matches scheduled for today.');
+    const preview = document.getElementById('todays-matches-preview');
+    if (preview) preview.textContent = 'No matches found for today.';
+    return;
+  }
+
+  // Sort by time
+  todayMatches.sort((a, b) => {
+    const parseTime = t => {
+      const m = t.match(/(\d+)(?::(\d+))?\s*(AM|PM)?/i);
+      if (!m) return 9999;
+      let h = parseInt(m[1]), mins = parseInt(m[2]||'0');
+      const ap = (m[3]||'').toUpperCase();
+      if (ap==='PM' && h<12) h+=12;
+      if (ap==='AM' && h===12) h=0;
+      return h*60+mins;
+    };
+    return parseTime(a.timeStr) - parseTime(b.timeStr);
+  });
+
+  // Build announcement text
+  const dateStr = `${DAY_NAMES_FULL[pacific.getDay()]}, ${MONTH_NAMES[pacific.getMonth()]} ${pacific.getDate()}`;
+  const lines = todayMatches.map(m =>
+    `• ${m.timeStr} — ${m.pA} vs ${m.pB} (${m.round} T${m.tier})`
+  );
+  const text = `Today's Matches — ${dateStr}\n\n${lines.join('\n')}`;
+
+  // Post it
+  await sbInsert('announcements', { text, author: 'Commish' });
+  await loadAnnouncements();
+  renderLatestBanner();
+  showToast(`Posted ${todayMatches.length} match${todayMatches.length>1?'es':''} for today ✓`);
+  const preview = document.getElementById('todays-matches-preview');
+  if (preview) preview.textContent = `${todayMatches.length} matches posted ✓`;
 }
 
 async function postAnnouncement() {
@@ -6167,6 +6600,7 @@ function showPage(id, btnEl) {
     }
   }
   if (id === 'roster') renderRoster();
+  if (id === 'pschedule') renderPlayoffSchedule();
   if (id === 'shame') renderShameWall();
   if (id === 'aces') renderAceWall();
   if (id === 'playoffs') { renderPlayoffs(); renderLatestBanner(); renderSeasonStats(); }
