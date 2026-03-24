@@ -147,7 +147,7 @@
     padding: 12px 12px; text-align: left;
     background: rgba(0,0,0,0.2);
   }
-  .standings-table th.num { text-align: center; }
+  .standings-table th.num { text-align: center; white-space: nowrap; }
   .standings-table td {
     padding: 13px 12px;
     font-family: 'EB Garamond', serif; font-size: 16px;
@@ -155,7 +155,7 @@
     vertical-align: middle;
     transition: background 0.12s;
   }
-  .standings-table td.num { text-align: center; font-family: 'Courier Prime', monospace; font-size: 14px; }
+  .standings-table td.num { text-align: center; font-family: 'Courier Prime', monospace; font-size: 14px; white-space: nowrap; }
   .standings-table tr:hover td { background: rgba(201,168,76,0.05); }
   .standings-table tr.first td { color: var(--gold-light); }
   .rank-badge {
@@ -544,7 +544,7 @@
     .tier-grid { grid-template-columns: 1fr; gap: 12px; }
     /* Tier standings tables: scrollable on mobile, never hide +/- column */
     #tier-standings-grid .card { overflow-x: auto; padding: 12px 10px; }
-    #tier-standings-grid .standings-table { min-width: 340px; }
+    #tier-standings-grid .standings-table { min-width: 380px; }
 
     .matchup-row { padding: 10px 12px; flex-wrap: wrap; }
     .matchup-teams { font-size: 14px; }
@@ -3798,7 +3798,7 @@ function renderTierStandings() {
           <th>Player</th>
           <th style="font-size:9px">Team</th>
           <th class="num">Pts</th>
-          <th class="num">W-L-T</th>
+          <th class="num" style="white-space:nowrap;min-width:70px;">W–L–T</th>
           <th class="num" title="Net hole differential across all matches" style="font-size:9px;">+/-</th>
         </tr></thead>
         <tbody>
@@ -3823,7 +3823,7 @@ function renderTierStandings() {
               <td><span class="player-link" onclick="openPlayerCard('${safe}')">${p.name}</span>${crBadge}${badge}</td>
               <td style="font-size:12px;opacity:0.7;">${p.team.substring(0,12)}</td>
               <td class="num"><strong>${p.pts}</strong></td>
-              <td class="num">${p.w}-${p.l}-${p.t}</td>
+              <td class="num" style="white-space:nowrap;font-family:'Courier Prime',monospace;font-size:13px;">${p.w}–${p.l}–${p.t}</td>
               <td class="num">${diffBadge}</td>
             </tr>`;
           }).join('')}
