@@ -746,6 +746,18 @@
     font-size: 11px; color: var(--cream-dark); opacity: 0.35;
     letter-spacing: 1px;
   }
+  .pog-clear-btn {
+    background: none;
+    border: 1px solid rgba(139,32,32,0.5);
+    color: var(--red-light);
+    font-family: 'Courier Prime', monospace;
+    font-size: 10px; letter-spacing: 1px;
+    padding: 3px 10px; border-radius: 3px;
+    cursor: pointer; opacity: 0.7;
+    transition: opacity 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pog-clear-btn:hover { opacity: 1; background: rgba(139,32,32,0.15); }
 
   /* ── PLAYOFF SCHEDULE INPUT ── */
   .playoff-schedule-row { display:flex; align-items:center; gap:10px; margin:6px 0 14px; }
@@ -4497,7 +4509,10 @@ function buildPlayoffTierGrid(matchId, teamA, teamB, resultsObj, readonly) {
     } else {
       html += `
       <div class="pog-card" style="${cardBorder}" id="pog-card-${matchId}-${tier}">
-        <div class="pog-tier-badge">Tier ${tier}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="pog-tier-badge" style="margin-bottom:0;">Tier ${tier}</div>
+          ${hasResult ? `<button class="pog-clear-btn" onclick="clearPlayoffResult('${matchId}',${tier})">✕ Clear</button>` : ''}
+        </div>
         <div class="pog-matchup">${pA} <span class="pog-vs">vs</span> ${pB}</div>
         <div class="pog-winner-row">
           <button class="pog-btn ${winVal==='home'?'pog-btn-active':''}"
@@ -4550,6 +4565,37 @@ async function setPlayoffWinner(matchId, tier, winner, pA, pB) {
 
 
 
+
+async function clearPlayoffResult(matchId, tier) {
+  if (!canEditPlayoffMatch(matchId)) { showToast('Sign in to clear results.'); return; }
+
+  const target = matchId === 'sf1' ? playoffState.sf1Results
+               : matchId === 'sf2' ? playoffState.sf2Results
+               : playoffState.finalResults;
+
+  delete target[tier];
+
+  // Clear the visible inputs immediately
+  const resEl = document.getElementById(`${matchId}-res-${tier}`);
+  const winEl = document.getElementById(`${matchId}-win-${tier}`);
+  if (resEl) resEl.value = '';
+  if (winEl) winEl.value = '';
+
+  // Remove active state from buttons
+  const card = document.getElementById(`pog-card-${matchId}-${tier}`);
+  if (card) {
+    card.querySelectorAll('.pog-btn').forEach(b => b.classList.remove('pog-btn-active'));
+    card.style.borderColor = 'rgba(201,168,76,0.2)';
+  }
+
+  await savePlayoffState();
+  await updatePlayoffSummary(matchId);
+  showToast(`Tier ${tier} cleared ✓`);
+  renderPlayoffStats();
+
+  // Re-render to remove the Clear button
+  setTimeout(() => renderPlayoffs(), 300);
+}
 
 async function savePlayoffResult(matchId, tier) {
   // Auth check — must be admin or captain of one of the teams in this matchup
