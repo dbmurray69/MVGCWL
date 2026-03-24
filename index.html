@@ -1724,10 +1724,15 @@
       </div>
     </div>
   </div>
-  <!-- Top-right corner: Admin -->
-  <button class="header-corner-btn header-corner-right" onclick="showPage('admin', document.querySelector('.nav-more-item[onclick*=admin]'))">
-    ⚙ Admin
-  </button>
+  <!-- Top-right corner: Admin + Captain Login -->
+  <div style="position:absolute;top:10px;right:12px;z-index:25;display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+    <button class="header-corner-btn" onclick="showPage('admin', document.querySelector('.nav-more-item[onclick*=admin]'))">
+      ⚙ Admin
+    </button>
+    <button class="header-corner-btn" id="header-captain-btn" onclick="handleHeaderCaptainBtn()" style="background:rgba(201,168,76,0.08);">
+      🏌 Captain
+    </button>
+  </div>
   <div class="header-right-block">
     <a class="book-tee-time"
        href="https://apimanager-cc11.clubcaddie.com/webapi/view/iafdabab/slots?ratetype=any&Interaction=rm3eodlgitov0f4qtnf4ij4hd5"
@@ -3980,7 +3985,29 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePlayerC
 //  ADMIN QUICK-POST BUTTONS
 // ═══════════════════════════════════════════════════════
 
-function showAdminQuickPost() {
+function handleHeaderCaptainBtn() {
+  if (captainAuthenticated && captainSession) {
+    // Already logged in — go to enter results page
+    showPage('results', document.querySelector('.nav-more-item[onclick*=results]'));
+  } else {
+    // Not logged in — go to enter results page which shows captain login
+    showPage('results', document.querySelector('.nav-more-item[onclick*=results]'));
+  }
+}
+
+function updateHeaderCaptainBtn() {
+  const btn = document.getElementById('header-captain-btn');
+  if (!btn) return;
+  if (captainAuthenticated && captainSession) {
+    btn.textContent = `🏌 ${captainSession.name.split(' ')[0]}`;
+    btn.style.color = 'var(--gold)';
+    btn.style.borderColor = 'rgba(201,168,76,0.5)';
+  } else {
+    btn.textContent = '🏌 Captain';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+  }
+}
   const el = document.getElementById('admin-quick-post');
   if (el) el.style.display = adminAuthenticated ? 'block' : 'none';
 }
@@ -6168,6 +6195,7 @@ function showCaptainContent() {
   const nameEl = document.getElementById('captain-logged-in-name');
   if (nameEl && captainSession) nameEl.textContent = `${captainSession.name} · ${captainSession.team}`;
   renderResultEntry();
+  updateHeaderCaptainBtn();
 }
 
 function captainLogout() {
@@ -6176,6 +6204,7 @@ function captainLogout() {
   try { sessionStorage.removeItem('mvgc_captain_auth'); } catch(e) {}
   document.getElementById('captain-login-gate').style.display = 'flex';
   document.getElementById('captain-results-content').style.display = 'none';
+  updateHeaderCaptainBtn();
   showToast('Signed out ✓');
 }
 
@@ -6949,6 +6978,7 @@ function renderAll() {
   loadLandingPage();
   loadAdminAuth();
   loadCaptainAuth();
+  updateHeaderCaptainBtn();
   loadCaptainAssignments();
 
   // Test Supabase connection first
