@@ -2154,6 +2154,9 @@
     <!-- Bracket visual -->
     <div id="playoff-bracket" class="playoff-bracket-wrap"></div>
 
+    <!-- Live scores banner -->
+    <div id="playoff-live-scores" style="margin:20px 0;"></div>
+
     <!-- Semifinal 1 -->
     <div class="playoff-match-block" id="playoff-sf1-block">
       <div class="playoff-round-label">Semifinal 1</div>
@@ -5395,6 +5398,45 @@ async function savePlayoffResult(matchId, tier) {
   logResult(roundLabel, matchup.teamA || 'TBD', matchup.teamB || 'TBD', tier, result, winner);
 }
 
+function renderPlayoffLiveScores() {
+  const el = document.getElementById('playoff-live-scores');
+  if (!el) return;
+
+  const sf1 = playoffState.sf1, sf2 = playoffState.sf2;
+  const sf1pts = calcRoundPoints(playoffState.sf1Results);
+  const sf2pts = calcRoundPoints(playoffState.sf2Results);
+  const finpts = calcRoundPoints(playoffState.finalResults);
+  const sf1played = Object.values(playoffState.sf1Results).filter(r=>r&&r.winner).length;
+  const sf2played = Object.values(playoffState.sf2Results).filter(r=>r&&r.winner).length;
+  const finplayed = Object.values(playoffState.finalResults).filter(r=>r&&r.winner).length;
+
+  const scoreBox = (teamA, teamB, ptsA, ptsB, played, round) => {
+    if (!teamA || !teamB) return '';
+    const leaderA = ptsA > ptsB, leaderB = ptsB > ptsA;
+    return `
+      <div style="flex:1;min-width:240px;background:linear-gradient(135deg,rgba(13,42,26,0.8),rgba(8,28,16,0.9));
+        border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:14px 18px;">
+        <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:2px;color:var(--gold);opacity:0.6;margin-bottom:10px;text-transform:uppercase;">${round}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="font-family:'Playfair Display',serif;font-size:15px;color:${leaderA?'var(--gold-light)':'var(--cream)'};font-weight:${leaderA?700:400};flex:1;">${teamA}</div>
+          <div style="font-family:'Courier Prime',monospace;font-size:28px;font-weight:700;color:${leaderA?'var(--gold)':'var(--cream-dark)'};min-width:28px;text-align:right;">${ptsA}</div>
+          <div style="font-family:'Courier Prime',monospace;font-size:14px;color:var(--cream-dark);opacity:0.4;">–</div>
+          <div style="font-family:'Courier Prime',monospace;font-size:28px;font-weight:700;color:${leaderB?'var(--gold)':'var(--cream-dark)'};min-width:28px;text-align:left;">${ptsB}</div>
+          <div style="font-family:'Playfair Display',serif;font-size:15px;color:${leaderB?'var(--gold-light)':'var(--cream)'};font-weight:${leaderB?700:400};flex:1;text-align:right;">${teamB}</div>
+        </div>
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--cream-dark);opacity:0.4;margin-top:8px;text-align:center;letter-spacing:1px;">${played}/10 played</div>
+      </div>`;
+  };
+
+  let html = '<div style="display:flex;gap:12px;flex-wrap:wrap;">';
+  if (sf1?.teamA) html += scoreBox(sf1.teamA, sf1.teamB, sf1pts.homeP, sf1pts.awayP, sf1played, 'Semifinal 1');
+  if (sf2?.teamA) html += scoreBox(sf2.teamA, sf2.teamB, sf2pts.homeP, sf2pts.awayP, sf2played, 'Semifinal 2');
+  if (playoffState.finalTeamA) html += scoreBox(playoffState.finalTeamA, playoffState.finalTeamB, finpts.homeP, finpts.awayP, finplayed, 'Championship Final');
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
 async function updatePlayoffSummary(matchId) {
   const isSf1 = matchId === 'sf1', isSf2 = matchId === 'sf2', isFinal = matchId === 'final';
   const match = isSf1 ? playoffState.sf1 : isSf2 ? playoffState.sf2 : { teamA: playoffState.finalTeamA, teamB: playoffState.finalTeamB };
@@ -5434,6 +5476,7 @@ async function updatePlayoffSummary(matchId) {
   }
   html += `</div>`;
   summaryEl.innerHTML = html;
+  renderPlayoffLiveScores();
 }
 
 async function renderFinalMatchup() {
@@ -5608,6 +5651,7 @@ function canEditPlayoffMatch(matchId) {
 
 async function renderPlayoffs() {
   renderPlayoffBracket();
+  renderPlayoffLiveScores();
   setTimeout(loadPlayoffSchedules, 50);
   showAdminQuickPost();
 
