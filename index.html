@@ -5761,22 +5761,12 @@ async function renderPlayoffs() {
 
 let announcements = []; // [{text, author, ts}] newest first
 
-const SEED_ANNOUNCEMENTS = [
-  {
-    text: "Monarchs win the Regular Season! Playoffs start today.",
-    author: "Commissioner",
-    ts: new Date('2026-03-23T10:00:00').toISOString()
-  }
-];
-
 async function loadAnnouncements() {
   const rows = await sbGet('announcements', 'created_at.desc');
   if (rows && rows.length) {
     announcements = rows.map(r => ({ id: r.id, text: r.text, author: r.author, ts: r.created_at }));
   } else {
-    // Seed initial announcement if DB is empty
-    announcements = [...SEED_ANNOUNCEMENTS];
-    await sbInsert('announcements', { text: SEED_ANNOUNCEMENTS[0].text, author: SEED_ANNOUNCEMENTS[0].author });
+    announcements = [];
   }
   renderLatestBanner();
   renderAnnouncementsPage();
