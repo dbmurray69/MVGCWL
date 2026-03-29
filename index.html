@@ -5214,6 +5214,8 @@ function parseOneResult(matchupStr, resultStr) {
 
 function applySheetRows(rows) {
   // rows[0..9] = tiers 1-10, each row = [colB, colC, colD, colE]
+  // The sheet is the source of truth — if a cell is a tee time or blank,
+  // we CLEAR any stale result/winner that may be saved from before.
   let loaded = { teeTimes: 0, results: 0 };
   rows.forEach((row, idx) => {
     const tier = idx + 1;
@@ -5223,17 +5225,31 @@ function applySheetRows(rows) {
     // ── SF1 ──
     if (!playoffState.sf1Results[tier]) playoffState.sf1Results[tier] = {};
     const sf1 = parseOneResult(colB, colC);
-    if (sf1) {
-      if (sf1.teeTime) { playoffState.sf1Results[tier].teeTime = sf1.teeTime; loaded.teeTimes++; }
-      else { playoffState.sf1Results[tier].result = sf1.result; playoffState.sf1Results[tier].winner = sf1.winner; loaded.results++; }
+    if (sf1 && !sf1.teeTime) {
+      // Real result — set it
+      playoffState.sf1Results[tier].result = sf1.result;
+      playoffState.sf1Results[tier].winner = sf1.winner;
+      loaded.results++;
+    } else {
+      // Tee time or blank = not played yet — clear any stale result
+      delete playoffState.sf1Results[tier].result;
+      delete playoffState.sf1Results[tier].winner;
+      if (sf1 && sf1.teeTime) { playoffState.sf1Results[tier].teeTime = sf1.teeTime; loaded.teeTimes++; }
     }
 
     // ── SF2 ──
     if (!playoffState.sf2Results[tier]) playoffState.sf2Results[tier] = {};
     const sf2 = parseOneResult(colD, colE);
-    if (sf2) {
-      if (sf2.teeTime) { playoffState.sf2Results[tier].teeTime = sf2.teeTime; loaded.teeTimes++; }
-      else { playoffState.sf2Results[tier].result = sf2.result; playoffState.sf2Results[tier].winner = sf2.winner; loaded.results++; }
+    if (sf2 && !sf2.teeTime) {
+      // Real result — set it
+      playoffState.sf2Results[tier].result = sf2.result;
+      playoffState.sf2Results[tier].winner = sf2.winner;
+      loaded.results++;
+    } else {
+      // Tee time or blank = not played yet — clear any stale result
+      delete playoffState.sf2Results[tier].result;
+      delete playoffState.sf2Results[tier].winner;
+      if (sf2 && sf2.teeTime) { playoffState.sf2Results[tier].teeTime = sf2.teeTime; loaded.teeTimes++; }
     }
   });
   return loaded;
