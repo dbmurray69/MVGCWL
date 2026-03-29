@@ -2138,6 +2138,8 @@
   <div id="page-playoffs" class="page active">
     <div id="playoff-announcement-banner"></div>
     <div id="playoff-signin-banner"></div>
+    <div id="sheets-sync-status" style="display:none;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:1px;color:var(--gold);opacity:0.7;text-align:center;padding:4px 0 8px;"></div>
+    <button onclick="refreshFromSheets()" style="display:block;margin:0 auto 12px;background:none;border:1px solid rgba(201,168,76,0.3);color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:1.5px;padding:5px 14px;border-radius:3px;cursor:pointer;opacity:0.75;" title="Re-fetch tee times and results from Google Sheets">⟳ SYNC FROM SHEET</button>
     <!-- Admin quick-post bar -->
     <div id="admin-quick-post" style="display:none;">
       <div class="admin-quick-bar">
@@ -5134,8 +5136,8 @@ function resetAll() {
 
 // playoff state persisted in localStorage
 let playoffState = {
-  sf1: { teamA: '', teamB: '' },
-  sf2: { teamA: '', teamB: '' },
+  sf1: { teamA: 'Monarchs', teamB: 'Pinseeking Powderhounds' },
+  sf2: { teamA: 'Scott Highlanders', teamB: 'Birds' },
   sf1Results: {},   // tier -> {result, winner}
   sf2Results: {},
   finalResults: {},
@@ -5143,18 +5145,150 @@ let playoffState = {
   finalTeamB: '',   // winner of sf2
 };
 
+// ── Google Sheets sync ──────────────────────────────────────────────────────
+const SHEETS_ID  = '1NAh20bGShJBk8e3A4uaxcVcUhnxvOWPHYGxs8uAU868';
+const SHEETS_GID = '0';
+const SHEETS_RANGE = 'A245:E258';
+
+function parseCSV(text) {
+  // RFC-4180 CSV parser
+  const rows = [];
+  let row = [], cell = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i+1] === '"') { cell += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else cell += c;
+    } else {
+      if (c === '"') { inQ = true; }
+      else if (c === ',') { row.push(cell.trim()); cell = ''; }
+      else if (c === '\n') { row.push(cell.trim()); rows.push(row); row = []; cell = ''; }
+      else if (c !== '\r') cell += c;
+    }
+  }
+  if (cell || row.length) { row.push(cell.trim()); rows.push(row); }
+  return rows.filter(r => r.some(c => c));
+}
+
+function applySheetRows(rows) {
+  // Expected columns: A=Section/Tier, B=Player1, C=Player2, D=TeeTime, E=Result
+  // Rows 1-10 map to SF1 tiers 1-10, rows 11-14 (if present) extend to SF2 start
+  // Auto-detect: look for "SF1"/"SF2" header rows, or just use positional mapping
+  let currentSection = 'sf1';
+  let tierCounter = { sf1: 0, sf2: 0 };
+  let sheetsLoaded = { teeTimes: 0, results: 0 };
+
+  rows.forEach((row, idx) => {
+    const [colA='', colB='', colC='', colD='', colE=''] = row.map(c => (c||'').trim());
+    const aLow = colA.toLowerCase();
+
+    // Detect section headers
+    if (aLow.includes('sf1') || aLow.includes('semifinal 1') || aLow.includes('monarchs')) {
+      currentSection = 'sf1'; return;
+    }
+    if (aLow.includes('sf2') || aLow.includes('semifinal 2') || aLow.includes('highlanders') || aLow.includes('birds')) {
+      currentSection = 'sf2'; return;
+    }
+    // Skip blank/header rows
+    if (!colB && !colD && !colE) return;
+
+    // Determine tier from col A (e.g. "1", "Tier 1", "T1") or auto-increment
+    let tier = parseInt(aLow.replace(/[^0-9]/g,'')) || 0;
+    if (!tier || tier < 1 || tier > 10) {
+      tierCounter[currentSection]++;
+      tier = tierCounter[currentSection];
+    }
+    if (tier < 1 || tier > 10) return;
+
+    const resultsObj = currentSection === 'sf1' ? playoffState.sf1Results : playoffState.sf2Results;
+    if (!resultsObj[tier]) resultsObj[tier] = {};
+
+    // Col D = tee time (only overwrite if sheet has a value)
+    if (colD) {
+      resultsObj[tier].teeTime = colD;
+      sheetsLoaded.teeTimes++;
+    }
+
+    // Col E = result — parse match play format or winner name
+    if (colE && colE.toLowerCase() !== 'tbd' && colE !== '-') {
+      const resultRaw = colE;
+      // Try to detect winner from player names in B/C
+      let winner = '';
+      const resultLow = resultRaw.toLowerCase();
+      if (resultLow === 'halved' || resultLow === 'halve' || resultLow === 'tie' || resultLow === 'tied') {
+        resultsObj[tier].result = 'Halved';
+        resultsObj[tier].winner = 'halved';
+      } else {
+        // Format like "Noerr 2&1" or "2&1 Noerr" or just "Noerr"
+        resultsObj[tier].result = resultRaw;
+        // Try to match winner to player B or C
+        const bLast = (colB.split(' ').pop()||'').toLowerCase();
+        const cLast = (colC.split(' ').pop()||'').toLowerCase();
+        if (bLast && resultLow.includes(bLast)) winner = 'home';
+        else if (cLast && resultLow.includes(cLast)) winner = 'away';
+        else winner = 'home'; // default to first listed player
+        if (winner) resultsObj[tier].winner = winner;
+      }
+      sheetsLoaded.results++;
+    }
+  });
+
+  return sheetsLoaded;
+}
+
+async function fetchPlayoffFromSheets() {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:csv&gid=${SHEETS_GID}&range=${SHEETS_RANGE}`;
+  try {
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    if (!text || text.includes('<html')) throw new Error('Not a CSV response');
+    const rows = parseCSV(text);
+    if (!rows.length) throw new Error('Empty');
+    const loaded = applySheetRows(rows);
+    const msg = `Synced from Google Sheets — ${loaded.teeTimes} tee times, ${loaded.results} results`;
+    const el = document.getElementById('sheets-sync-status');
+    if (el) { el.textContent = '✓ ' + msg; el.style.display = 'block'; }
+    console.log('[Sheets]', msg);
+    return true;
+  } catch(e) {
+    console.warn('[Sheets] Could not load playoff data:', e.message);
+    const el = document.getElementById('sheets-sync-status');
+    if (el) { el.textContent = '⚠ Google Sheets unavailable — using saved data'; el.style.display = 'block'; }
+    return false;
+  }
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 async function loadPlayoffState() {
+  // Step 1: Load saved state from Supabase (or localStorage fallback)
   const rows = await sbGet('playoff_state', 'id.asc');
   if (rows && rows.length) {
-    try { playoffState = JSON.parse(rows[0].state_json); } catch(e) {}
+    try {
+      const loaded = JSON.parse(rows[0].state_json);
+      playoffState = { ...playoffState, ...loaded,
+        sf1: { ...playoffState.sf1, ...(loaded.sf1 || {}) },
+        sf2: { ...playoffState.sf2, ...(loaded.sf2 || {}) },
+      };
+    } catch(e) {}
   } else {
     try {
       const s = localStorage.getItem('mvgc_playoffs');
-      if (s) playoffState = JSON.parse(s);
+      if (s) {
+        const loaded = JSON.parse(s);
+        playoffState = { ...playoffState, ...loaded,
+          sf1: { ...playoffState.sf1, ...(loaded.sf1 || {}) },
+          sf2: { ...playoffState.sf2, ...(loaded.sf2 || {}) },
+        };
+      }
     } catch(e) {}
   }
 
-  // Pre-fill default tee times if not already set
+  // Step 2: Fetch Google Sheets — overwrites tee times & results with latest sheet data
+  await fetchPlayoffFromSheets();
+
+  // Step 3: Pre-fill any still-missing tee times with hardcoded defaults
   const sf1Times = { 1:'SAT 3 PM', 2:'SAT 3 PM', 3:'TUES 2:30', 4:'WED', 5:'', 6:'', 7:'', 8:'', 9:'', 10:'' };
   const sf2Times = { 1:'THUR 10:00', 2:'THUR 10:00', 3:'FRI 11:15', 4:'SUN 2:00', 5:'SUN 2:00', 6:'THUR 3:30', 7:'', 8:'FRI 1:15', 9:'THUR 12:30', 10:'THUR 4 PM' };
 
@@ -5164,6 +5298,13 @@ async function loadPlayoffState() {
     if (!playoffState.sf2Results[t]) playoffState.sf2Results[t] = {};
     if (!playoffState.sf2Results[t].teeTime && sf2Times[t]) playoffState.sf2Results[t].teeTime = sf2Times[t];
   }
+}
+
+async function refreshFromSheets() {
+  const el = document.getElementById('sheets-sync-status');
+  if (el) { el.textContent = '⟳ Syncing from Google Sheets…'; el.style.display = 'block'; }
+  await fetchPlayoffFromSheets();
+  renderPlayoffs();
 }
 
 async function savePlayoffState() {
