@@ -5137,7 +5137,7 @@ function resetAll() {
 // playoff state persisted in localStorage
 let playoffState = {
   sf1: { teamA: 'Monarchs', teamB: 'Pinseeking Powderhounds' },
-  sf2: { teamA: 'Scott Highlanders', teamB: 'Birds' },
+  sf2: { teamA: 'Birds', teamB: 'Scott Highlanders' },
   sf1Results: {},   // tier -> {result, winner}
   sf2Results: {},
   finalResults: {},
@@ -5148,10 +5148,14 @@ let playoffState = {
 // ── Google Sheets sync ──────────────────────────────────────────────────────
 const SHEETS_ID  = '1NAh20bGShJBk8e3A4uaxcVcUhnxvOWPHYGxs8uAU868';
 const SHEETS_GID = '0';
-const SHEETS_RANGE = 'A245:E258';
+// Sheet layout (rows 248-257 = tiers 1-10):
+//   Col B = SF1 matchup ("Noerr v Mackay")
+//   Col C = SF1 result or tee time ("Noerr 3&2" / "SUN 2:15")
+//   Col D = SF2 matchup ("D. Acton v Tupper")
+//   Col E = SF2 result or tee time
+const SHEETS_RANGE = 'B248:E257';
 
 function parseCSV(text) {
-  // RFC-4180 CSV parser
   const rows = [];
   let row = [], cell = '', inQ = false;
   for (let i = 0; i < text.length; i++) {
@@ -5168,73 +5172,71 @@ function parseCSV(text) {
     }
   }
   if (cell || row.length) { row.push(cell.trim()); rows.push(row); }
-  return rows.filter(r => r.some(c => c));
+  return rows;
+}
+
+function isTeeTime(str) {
+  // Tee times look like "SUN 2:15", "MON 4:00", "SAT 3 PM"
+  return /^(MON|TUE|WED|THU|FRI|SAT|SUN)\b/i.test((str||'').trim());
+}
+
+function parseOneResult(matchupStr, resultStr) {
+  // matchupStr: "Noerr v Mackay"  →  home player = "Noerr", away = "Mackay"
+  // resultStr:  "Noerr 3&2"       →  home won 3&2
+  //             "Tupper 1 up"     →  away won 1 up
+  //             "SUN 2:15"        →  tee time, not a result
+  //             ""                →  not played yet
+  const res = (resultStr || '').trim();
+  if (!res || res === '-' || res.toLowerCase() === 'tbd') return null;
+
+  if (isTeeTime(res)) return { teeTime: res };   // it's a schedule time, not a result
+
+  const low = res.toLowerCase();
+  if (low === 'halved' || low === 'halve' || low === 'tie' || low === 'all square' || low === 'as') {
+    return { result: res, winner: 'halved' };
+  }
+
+  // Determine winner by matching winner's name against the matchup string
+  // Matchup format: "Home Player v Away Player"
+  const vIdx = (matchupStr || '').toLowerCase().indexOf(' v ');
+  if (vIdx >= 0) {
+    const homeName = matchupStr.substring(0, vIdx).trim();   // e.g. "Noerr" or "D. Acton"
+    const awayName = matchupStr.substring(vIdx + 3).trim();  // e.g. "Mackay" or "Tupper"
+    // Use last word of each name for matching (handles "D. Acton" → "Acton")
+    const homeLast = homeName.split(/\s+/).pop().toLowerCase();
+    const awayLast = awayName.split(/\s+/).pop().toLowerCase();
+    if (awayLast && low.includes(awayLast)) return { result: res, winner: 'away' };
+    if (homeLast && low.includes(homeLast)) return { result: res, winner: 'home' };
+  }
+  // Fallback: assume home win if we can't tell
+  return { result: res, winner: 'home' };
 }
 
 function applySheetRows(rows) {
-  // Expected columns: A=Section/Tier, B=Player1, C=Player2, D=TeeTime, E=Result
-  // Rows 1-10 map to SF1 tiers 1-10, rows 11-14 (if present) extend to SF2 start
-  // Auto-detect: look for "SF1"/"SF2" header rows, or just use positional mapping
-  let currentSection = 'sf1';
-  let tierCounter = { sf1: 0, sf2: 0 };
-  let sheetsLoaded = { teeTimes: 0, results: 0 };
-
+  // rows[0..9] = tiers 1-10, each row = [colB, colC, colD, colE]
+  let loaded = { teeTimes: 0, results: 0 };
   rows.forEach((row, idx) => {
-    const [colA='', colB='', colC='', colD='', colE=''] = row.map(c => (c||'').trim());
-    const aLow = colA.toLowerCase();
-
-    // Detect section headers
-    if (aLow.includes('sf1') || aLow.includes('semifinal 1') || aLow.includes('monarchs')) {
-      currentSection = 'sf1'; return;
-    }
-    if (aLow.includes('sf2') || aLow.includes('semifinal 2') || aLow.includes('highlanders') || aLow.includes('birds')) {
-      currentSection = 'sf2'; return;
-    }
-    // Skip blank/header rows
-    if (!colB && !colD && !colE) return;
-
-    // Determine tier from col A (e.g. "1", "Tier 1", "T1") or auto-increment
-    let tier = parseInt(aLow.replace(/[^0-9]/g,'')) || 0;
-    if (!tier || tier < 1 || tier > 10) {
-      tierCounter[currentSection]++;
-      tier = tierCounter[currentSection];
-    }
+    const tier = idx + 1;
     if (tier < 1 || tier > 10) return;
+    const [colB='', colC='', colD='', colE=''] = row.map(c => (c||'').trim());
 
-    const resultsObj = currentSection === 'sf1' ? playoffState.sf1Results : playoffState.sf2Results;
-    if (!resultsObj[tier]) resultsObj[tier] = {};
-
-    // Col D = tee time (only overwrite if sheet has a value)
-    if (colD) {
-      resultsObj[tier].teeTime = colD;
-      sheetsLoaded.teeTimes++;
+    // ── SF1 ──
+    if (!playoffState.sf1Results[tier]) playoffState.sf1Results[tier] = {};
+    const sf1 = parseOneResult(colB, colC);
+    if (sf1) {
+      if (sf1.teeTime) { playoffState.sf1Results[tier].teeTime = sf1.teeTime; loaded.teeTimes++; }
+      else { playoffState.sf1Results[tier].result = sf1.result; playoffState.sf1Results[tier].winner = sf1.winner; loaded.results++; }
     }
 
-    // Col E = result — parse match play format or winner name
-    if (colE && colE.toLowerCase() !== 'tbd' && colE !== '-') {
-      const resultRaw = colE;
-      // Try to detect winner from player names in B/C
-      let winner = '';
-      const resultLow = resultRaw.toLowerCase();
-      if (resultLow === 'halved' || resultLow === 'halve' || resultLow === 'tie' || resultLow === 'tied') {
-        resultsObj[tier].result = 'Halved';
-        resultsObj[tier].winner = 'halved';
-      } else {
-        // Format like "Noerr 2&1" or "2&1 Noerr" or just "Noerr"
-        resultsObj[tier].result = resultRaw;
-        // Try to match winner to player B or C
-        const bLast = (colB.split(' ').pop()||'').toLowerCase();
-        const cLast = (colC.split(' ').pop()||'').toLowerCase();
-        if (bLast && resultLow.includes(bLast)) winner = 'home';
-        else if (cLast && resultLow.includes(cLast)) winner = 'away';
-        else winner = 'home'; // default to first listed player
-        if (winner) resultsObj[tier].winner = winner;
-      }
-      sheetsLoaded.results++;
+    // ── SF2 ──
+    if (!playoffState.sf2Results[tier]) playoffState.sf2Results[tier] = {};
+    const sf2 = parseOneResult(colD, colE);
+    if (sf2) {
+      if (sf2.teeTime) { playoffState.sf2Results[tier].teeTime = sf2.teeTime; loaded.teeTimes++; }
+      else { playoffState.sf2Results[tier].result = sf2.result; playoffState.sf2Results[tier].winner = sf2.winner; loaded.results++; }
     }
   });
-
-  return sheetsLoaded;
+  return loaded;
 }
 
 async function fetchPlayoffFromSheets() {
@@ -5245,12 +5247,12 @@ async function fetchPlayoffFromSheets() {
     const text = await res.text();
     if (!text || text.includes('<html')) throw new Error('Not a CSV response');
     const rows = parseCSV(text);
-    if (!rows.length) throw new Error('Empty');
     const loaded = applySheetRows(rows);
-    const msg = `Synced from Google Sheets — ${loaded.teeTimes} tee times, ${loaded.results} results`;
+    const now = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+    const msg = `Synced from Google Sheets at ${now} — ${loaded.results} results, ${loaded.teeTimes} tee times`;
     const el = document.getElementById('sheets-sync-status');
     if (el) { el.textContent = '✓ ' + msg; el.style.display = 'block'; }
-    console.log('[Sheets]', msg);
+    console.log('[Sheets]', msg, rows);
     return true;
   } catch(e) {
     console.warn('[Sheets] Could not load playoff data:', e.message);
